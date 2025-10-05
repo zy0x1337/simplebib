@@ -1,12 +1,8 @@
-// 🎯 PWA-Pattern: Book Details mit Rating & Delete
-// ✅ TypeScript Strict Mode
-// 📱 Interactive Rating System
-
 'use client'
 
 import { useState, useEffect } from 'react'
-import { db, Book } from '@/lib/db'
-import { X, Star, Trash2 } from 'lucide-react'
+import { db, Book, updateSeriesRating } from '@/lib/db'
+import { X, Star, Trash2, StarHalf } from 'lucide-react'
 
 interface BookDetailsModalProps {
   book: Book
@@ -17,10 +13,9 @@ interface BookDetailsModalProps {
 export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProps) {
   const [rating, setRating] = useState(book.rating || 0)
   const [hoverRating, setHoverRating] = useState(0)
-  const [coverSrc, setCoverSrc] = useState<string>('')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [coverSrc, setCoverSrc] = useState('')
 
-  // Load Cover
   useEffect(() => {
     if (book.coverType === 'upload' && book.coverBlob) {
       const url = URL.createObjectURL(book.coverBlob)
@@ -31,23 +26,28 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
     }
   }, [book])
 
-  // Update Rating
+  // Update Rating & Serienrating
   const handleRating = async (newRating: number) => {
     setRating(newRating)
     await db.books.update(book.id!, { rating: newRating })
+    if (book.seriesId) {
+      await updateSeriesRating(book.seriesId)
+    }
   }
 
-  // Delete Book
+  // Buch löschen
   const handleDelete = async () => {
     if (!confirm(`"${book.title}" wirklich löschen?`)) return
 
     setIsDeleting(true)
     try {
       await db.books.delete(book.id!)
+      if (book.seriesId) {
+        await updateSeriesRating(book.seriesId)
+      }
       onClose()
     } catch (error) {
-      console.error('Failed to delete book:', error)
-      alert('Fehler beim Löschen')
+      alert('Fehler beim Löschen des Buches')
     } finally {
       setIsDeleting(false)
     }
@@ -58,25 +58,16 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
   return (
     <div className="modal modal-open">
       <div className="modal-box max-w-md">
-        {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <h3 className="font-bold text-xl pr-8">{book.title}</h3>
-          <button
-            className="btn btn-sm btn-circle btn-ghost"
-            onClick={onClose}
-          >
+          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Cover & Info */}
         <div className="flex gap-4 mb-6">
           {coverSrc && (
-            <img
-              src={coverSrc}
-              alt={book.title}
-              className="w-24 h-36 object-cover rounded-lg"
-            />
+            <img src={coverSrc} alt={book.title} className="w-24 h-36 object-cover rounded-lg" />
           )}
           <div className="flex-1">
             <p className="text-base-content/80 mb-2">von {book.author}</p>
@@ -84,7 +75,6 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
           </div>
         </div>
 
-        {/* Rating */}
         <div className="mb-6">
           <p className="text-sm font-semibold mb-2">Deine Bewertung:</p>
           <div className="flex gap-1">
@@ -96,19 +86,20 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                 onMouseLeave={() => setHoverRating(0)}
                 onClick={() => handleRating(star)}
               >
-                <Star
-                  className={`w-8 h-8 ${
-                    star <= (hoverRating || rating)
-                      ? 'fill-warning text-warning'
-                      : 'text-base-300'
-                  }`}
-                />
+                {star <= (hoverRating || rating) ? (
+                  (star - 0.5 === rating) ? (
+                    <StarHalf className="w-8 h-8 fill-warning text-warning" />
+                  ) : (
+                    <Star className="w-8 h-8 fill-warning text-warning" />
+                  )
+                ) : (
+                  <Star className="w-8 h-8 text-base-300" />
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Delete Button */}
         <div className="modal-action">
           <button
             className="btn btn-error btn-outline"

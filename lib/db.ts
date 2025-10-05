@@ -1,11 +1,5 @@
-// 🎯 PWA-Pattern: IndexedDB für Offline-First Storage
-// ✅ TypeScript Strict Mode mit Dexie
-// ⚡ Performance-Critical: Indexed Queries
-// 📱 Offline-First: Alle Daten lokal
-
 import Dexie, { Table } from 'dexie'
 
-// Types
 export interface Book {
   id?: string
   title: string
@@ -16,7 +10,7 @@ export interface Book {
   seriesId?: string
   seriesPosition?: number
   status: 'unread' | 'reading' | 'finished'
-  rating?: number
+  rating?: number // float, z.B. 3.5
   dateRead?: Date
   dateAdded: Date
 }
@@ -26,6 +20,7 @@ export interface Series {
   name: string
   totalBooks: number
   dateCreated: Date
+  overallRating?: number // Durchschnitt aller Buchbewertungen, gerundet auf 0.5
 }
 
 export interface Settings {
@@ -36,18 +31,16 @@ export interface Settings {
   sortOrder: 'asc' | 'desc'
 }
 
-// Database
 class SimpleBibDB extends Dexie {
-  books!: Table<Book>
-  series!: Table<Series>
-  settings!: Table<Settings>
+  books!: Table<Book, string>
+  series!: Table<Series, string>
+  settings!: Table<Settings, string>
 
   constructor() {
     super('SimpleBibDB')
-    
-    this.version(1).stores({
+    this.version(2).stores({
       books: '++id, title, author, status, rating, seriesId, dateAdded',
-      series: '++id, name, dateCreated',
+      series: '++id, name, dateCreated, overallRating',
       settings: '++id',
     })
   }
@@ -55,10 +48,9 @@ class SimpleBibDB extends Dexie {
 
 export const db = new SimpleBibDB()
 
-// Helper: Initialize Default Settings
 export async function initializeSettings() {
-  const existing = await db.settings.count()
-  if (existing === 0) {
+  const count = await db.settings.count()
+  if (count === 0) {
     await db.settings.add({
       theme: 'light',
       defaultView: 'grid',
@@ -66,4 +58,21 @@ export async function initializeSettings() {
       sortOrder: 'desc',
     })
   }
+}
+
+export async function updateSeriesRating(seriesId: string) {
+  const books = await db.books.where('seriesId').equals(seriesId).toArray()
+  const ratings = books
+    .map((b) => b.rating)
+    .filter((r) => r !== undefined && r !== null) as number[]
+
+  if (ratings.length === 0) {
+    await db.series.update(seriesId, { overallRating: undefined })
+    return
+  }
+
+  const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length
+  const roundedRating = Math.round(avgRating * 2) / 2 // auf 0.5 runden
+
+  await db.series.update(seriesId, { overallRating: roundedRating })
 }

@@ -1,13 +1,8 @@
-// 🎯 PWA-Pattern: Main View mit Books & Series
-// ✅ TypeScript Strict Mode
-// ⚡ Performance-Critical: Lazy Loading
-// 📱 App-like UX: Mobile-Optimized
-
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '@/lib/db'
+import { db, Series } from '@/lib/db'
 import { BookCard } from '@/components/BookCard'
 import { SeriesCard } from '@/components/SeriesCard'
 import { AddBookButton } from '@/components/AddBookButton'
@@ -19,15 +14,24 @@ export default function HomePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [activeTab, setActiveTab] = useState<'books' | 'series'>('books')
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false)
+  const [sortedSeries, setSortedSeries] = useState<Series[]>([])
 
-  // Live Queries
   const allBooks = useLiveQuery(() => db.books.toArray())
   const allSeries = useLiveQuery(() => db.series.toArray())
 
-  // Filter books without series for books tab
+  // Update sortedSeries when allSeries changes
+  useEffect(() => {
+    if (!allSeries) return
+    const sorted = [...allSeries].sort((a, b) => {
+      if (b.overallRating === undefined) return -1
+      if (a.overallRating === undefined) return 1
+      return b.overallRating - a.overallRating
+    })
+    setSortedSeries(sorted)
+  }, [allSeries])
+
   const standaloneBooks = allBooks?.filter(book => !book.seriesId)
 
-  // Loading State
   if (!allBooks || !allSeries) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -36,7 +40,6 @@ export default function HomePage() {
     )
   }
 
-  // Empty State
   if (allBooks.length === 0 && allSeries.length === 0) {
     return (
       <div className="min-h-screen bg-base-200">
@@ -71,25 +74,23 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-base-200">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-6">
-        {/* Tabs */}
         <div className="tabs tabs-boxed mb-6 bg-base-100 p-1">
           <a
             className={`tab flex-1 ${activeTab === 'books' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('books')}
           >
-            Einzelbücher ({standaloneBooks?.length || 0})
+            Einzelbücher ({standaloneBooks?.length ?? 0})
           </a>
           <a
             className={`tab flex-1 ${activeTab === 'series' ? 'tab-active' : ''}`}
             onClick={() => setActiveTab('series')}
           >
-            Buchreihen ({allSeries.length})
+            Buchreihen ({sortedSeries.length})
           </a>
         </div>
 
-        {/* View Controls (nur für Books) */}
         {activeTab === 'books' && standaloneBooks && standaloneBooks.length > 0 && (
           <div className="flex justify-end gap-2 mb-6">
             <button
@@ -107,15 +108,15 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Content */}
         {activeTab === 'books' ? (
-          // Books View
           standaloneBooks && standaloneBooks.length > 0 ? (
-            <div className={
-              viewMode === 'grid'
-                ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
-                : 'flex flex-col gap-4'
-            }>
+            <div
+              className={
+                viewMode === 'grid'
+                  ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                  : 'flex flex-col gap-4'
+              }
+            >
               {standaloneBooks.map((book) => (
                 <BookCard key={book.id} book={book} viewMode={viewMode} />
               ))}
@@ -125,30 +126,26 @@ export default function HomePage() {
               <p>Keine Einzelbücher. Alle Bücher sind in Reihen organisiert.</p>
             </div>
           )
+        ) : sortedSeries.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {sortedSeries.map((series) => (
+              <SeriesCard key={series.id} series={series} />
+            ))}
+          </div>
         ) : (
-          // Series View
-          allSeries.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allSeries.map((series) => (
-                <SeriesCard key={series.id} series={series} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Library className="w-16 h-16 mx-auto mb-4 text-base-content/30" />
-              <p className="text-base-content/60 mb-4">Noch keine Buchreihen</p>
-              <button
-                className="btn btn-primary"
-                onClick={() => setIsSeriesModalOpen(true)}
-              >
-                Erste Reihe erstellen
-              </button>
-            </div>
-          )
+          <div className="text-center py-12">
+            <Library className="w-16 h-16 mx-auto mb-4 text-base-content/30" />
+            <p className="text-base-content/60 mb-4">Noch keine Buchreihen</p>
+            <button
+              className="btn btn-primary"
+              onClick={() => setIsSeriesModalOpen(true)}
+            >
+              Erste Reihe erstellen
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Floating Action Buttons */}
       <div className="fixed bottom-6 right-6 flex flex-col gap-3">
         {activeTab === 'series' && (
           <button

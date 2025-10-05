@@ -1,13 +1,8 @@
-// 🎯 PWA-Pattern: Book Card mit Edit/Rate Funktionalität
-// ✅ TypeScript Strict Mode
-// ⚡ Lazy Image Loading
-// 📱 Touch-Optimized
-
 'use client'
 
 import { Book } from '@/lib/db'
-import { Star, BookOpen } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { Star, StarHalf, Star as StarEmpty, BookOpen } from 'lucide-react'
 import { BookDetailsModal } from './BookDetailsModal'
 
 interface BookCardProps {
@@ -15,11 +10,27 @@ interface BookCardProps {
   viewMode: 'grid' | 'list'
 }
 
+function renderStars(rating?: number) {
+  if (rating === undefined) return null
+
+  const stars = []
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i) {
+      stars.push(<Star key={i} className="w-4 h-4 fill-warning text-warning" />)
+    } else if (rating >= i - 0.5) {
+      stars.push(<StarHalf key={i} className="w-4 h-4 fill-warning text-warning" />)
+    } else {
+      stars.push(<StarEmpty key={i} className="w-4 h-4 text-base-300" />)
+    }
+  }
+  return <div className="flex gap-0.5">{stars}</div>
+}
+
 export function BookCard({ book, viewMode }: BookCardProps) {
   const [coverSrc, setCoverSrc] = useState<string>('')
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Load Cover
+  // Cover Blob oder URL laden
   useEffect(() => {
     if (book.coverType === 'upload' && book.coverBlob) {
       const url = URL.createObjectURL(book.coverBlob)
@@ -30,32 +41,11 @@ export function BookCard({ book, viewMode }: BookCardProps) {
     }
   }, [book])
 
-  // Render Stars
-  const renderStars = () => {
-    if (!book.rating) return null
-    return (
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`w-4 h-4 ${
-              star <= book.rating! ? 'fill-warning text-warning' : 'text-base-300'
-            }`}
-          />
-        ))}
-      </div>
-    )
-  }
-
-  // Status Badge
+  // Status Farben & Labels
   const statusConfig = {
     unread: { color: 'badge-ghost', label: 'Ungelesen' },
     reading: { color: 'badge-info', label: 'Lese ich' },
     finished: { color: 'badge-success', label: 'Gelesen' },
-  }
-
-  const handleClick = () => {
-    setIsModalOpen(true)
   }
 
   if (viewMode === 'list') {
@@ -63,7 +53,7 @@ export function BookCard({ book, viewMode }: BookCardProps) {
       <>
         <div
           className="card card-side bg-base-100 shadow-md hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={handleClick}
+          onClick={() => setIsModalOpen(true)}
         >
           <figure className="w-24 flex-shrink-0">
             {coverSrc ? (
@@ -78,7 +68,7 @@ export function BookCard({ book, viewMode }: BookCardProps) {
             <h3 className="card-title text-base">{book.title}</h3>
             <p className="text-sm text-base-content/60">{book.author}</p>
             <div className="flex items-center gap-2 mt-2">
-              {renderStars()}
+              {renderStars(book.rating)}
               <span className={`badge badge-sm ${statusConfig[book.status].color}`}>
                 {statusConfig[book.status].label}
               </span>
@@ -97,7 +87,7 @@ export function BookCard({ book, viewMode }: BookCardProps) {
 
   return (
     <>
-      <div className="book-card cursor-pointer" onClick={handleClick}>
+      <div className="book-card cursor-pointer" onClick={() => setIsModalOpen(true)}>
         <figure className="aspect-[2/3] bg-base-300">
           {coverSrc ? (
             <img 
@@ -115,7 +105,9 @@ export function BookCard({ book, viewMode }: BookCardProps) {
         <div className="card-body p-3">
           <h3 className="font-semibold text-sm line-clamp-2">{book.title}</h3>
           <p className="text-xs text-base-content/60 line-clamp-1">{book.author}</p>
-          <div className="mt-1">{renderStars()}</div>
+          <div className="mt-1">
+            {renderStars(book.rating)}
+          </div>
         </div>
       </div>
 

@@ -1,13 +1,8 @@
-// 🎯 PWA-Pattern: Add Book Modal mit Cover Upload & Series
-// ✅ TypeScript Strict Mode
-// ⚡ Image Compression für Performance
-// 📱 Mobile-Optimized File Input
-
 'use client'
 
 import { useState, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, Book } from '@/lib/db'
+import { db, Book, updateSeriesRating } from '@/lib/db'
 import { X, Upload, Link as LinkIcon } from 'lucide-react'
 import { compressImage } from '@/lib/imageUtils'
 
@@ -24,27 +19,24 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
   const [coverBlob, setCoverBlob] = useState<Blob | null>(null)
   const [coverPreview, setCoverPreview] = useState<string | null>(null)
   const [status, setStatus] = useState<'unread' | 'reading' | 'finished'>('unread')
+  const [rating, setRating] = useState<number>(0)
   const [assignToSeries, setAssignToSeries] = useState(false)
   const [selectedSeriesId, setSelectedSeriesId] = useState('')
   const [seriesPosition, setSeriesPosition] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Load series
   const allSeries = useLiveQuery(() => db.series.toArray())
 
-  // Handle File Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate File Type
     if (!file.type.startsWith('image/')) {
       alert('Bitte nur Bilddateien (JPG, PNG, WebP)')
       return
     }
 
-    // Validate File Size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Datei zu groß. Maximum 5MB.')
       return
@@ -52,23 +44,18 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
 
     setIsLoading(true)
     try {
-      // Compress Image
       const compressed = await compressImage(file)
       setCoverBlob(compressed)
-      
-      // Generate Preview
       const previewUrl = URL.createObjectURL(compressed)
       setCoverPreview(previewUrl)
       setCoverType('upload')
-    } catch (error) {
-      console.error('Image compression failed:', error)
+    } catch {
       alert('Fehler beim Verarbeiten des Bildes')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handle URL Input
   const handleUrlChange = (url: string) => {
     setCoverUrl(url)
     if (url) {
@@ -80,7 +67,6 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
     }
   }
 
-  // Remove Cover
   const removeCover = () => {
     setCoverBlob(null)
     setCoverUrl('')
@@ -91,7 +77,6 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
     }
   }
 
-  // Submit Form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -109,25 +94,29 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
         coverUrl: coverType === 'url' ? coverUrl : undefined,
         coverBlob: coverType === 'upload' ? coverBlob! : undefined,
         status,
+        rating,
         seriesId: assignToSeries && selectedSeriesId ? selectedSeriesId : undefined,
         seriesPosition: assignToSeries && selectedSeriesId ? seriesPosition : undefined,
         dateAdded: new Date(),
       }
 
-      await db.books.add(newBook as Book)
-      
-      // Reset Form
+      const id = await db.books.add(newBook as Book)
+
+      if (assignToSeries && selectedSeriesId) {
+        await updateSeriesRating(selectedSeriesId)
+      }
+
       setTitle('')
       setAuthor('')
       removeCover()
       setStatus('unread')
+      setRating(0)
       setAssignToSeries(false)
       setSelectedSeriesId('')
       setSeriesPosition(1)
-      
+
       onClose()
-    } catch (error) {
-      console.error('Failed to add book:', error)
+    } catch {
       alert('Fehler beim Hinzufügen des Buches')
     } finally {
       setIsLoading(false)
@@ -136,24 +125,55 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
 
   if (!isOpen) return null
 
+  // Sterne Rating UI
+  const renderStars = () => {
+    const stars = []
+    for (let i = 1; i <= 5; i++) {
+      if (rating >= i) {
+        stars.push(
+          <StarFilled key={i} onClick={() => setRating(i)} />
+        )
+      } else if (rating >= i - 0.5) {
+        stars.push(
+          <StarHalf key={i} onClick={() => setRating(i - 0.5)} />
+        )
+      } else {
+        stars.push(
+          <StarEmpty key={i} onClick={() => setRating(i - 0.5)} />
+        )
+      }
+    }
+    return <div className="flex gap-1 cursor-pointer">{stars}</div>
+  }
+
+  // Stern Icons (einfache Komponenten)
+  const StarFilled = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} viewBox="0 0 24 24" fill="#fbbf24" width={24} height={24} xmlns="http://www.w3.org/2000/svg" style={{ cursor: 'pointer' }}>
+      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </svg>
+  )
+  const StarHalf = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} viewBox="0 0 24 24" fill="#fbbf24" width={24} height={24} xmlns="http://www.w3.org/2000/svg" style={{ cursor: 'pointer' }}>
+      <path d="M12 15.4l-3.76 2.27 1-4.28L5.47 10.5l4.38-.38L12 6v9.4z" />
+    </svg>
+  )
+  const StarEmpty = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth={2} width={24} height={24} xmlns="http://www.w3.org/2000/svg" style={{ cursor: 'pointer' }}>
+      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+    </svg>
+  )
+
   return (
     <div className="modal modal-open">
       <div className="modal-box max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-lg">Neues Buch hinzufügen</h3>
-          <button
-            className="btn btn-sm btn-circle btn-ghost"
-            onClick={onClose}
-            disabled={isLoading}
-          >
+          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose} disabled={isLoading}>
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        {/* Form */}
         <form onSubmit={handleSubmit}>
-          {/* Title */}
+          {/* Titel */}
           <div className="form-control mb-4">
             <label className="label">
               <span className="label-text">Titel *</span>
@@ -161,14 +181,13 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
             <input
               type="text"
               className="input input-bordered w-full"
+              placeholder="z.B. Der Hobbit"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="z.B. Der Hobbit"
               required
             />
           </div>
-
-          {/* Author */}
+          {/* Autor */}
           <div className="form-control mb-4">
             <label className="label">
               <span className="label-text">Autor *</span>
@@ -176,27 +195,19 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
             <input
               type="text"
               className="input input-bordered w-full"
+              placeholder="z.B. J.R.R. Tolkien"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="z.B. J.R.R. Tolkien"
               required
             />
           </div>
 
-          {/* Cover Section */}
+          {/* Cover Upload */}
           <div className="form-control mb-4">
-            <label className="label">
-              <span className="label-text">Cover (optional)</span>
-            </label>
-
-            {/* Cover Preview */}
-            {coverPreview && (
+            <label className="label"><span className="label-text">Cover (optional)</span></label>
+            {coverPreview ? (
               <div className="mb-3 relative">
-                <img
-                  src={coverPreview}
-                  alt="Cover Preview"
-                  className="w-32 h-48 object-cover rounded-lg mx-auto"
-                />
+                <img src={coverPreview} alt="Cover Vorschau" className="w-32 h-48 object-cover rounded-lg mx-auto" />
                 <button
                   type="button"
                   className="btn btn-sm btn-circle btn-error absolute top-2 right-2"
@@ -205,12 +216,8 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-            )}
-
-            {/* Upload Options */}
-            {!coverPreview && (
+            ) : (
               <div className="space-y-2">
-                {/* File Upload */}
                 <button
                   type="button"
                   className="btn btn-outline btn-block"
@@ -220,15 +227,7 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                   <Upload className="w-4 h-4 mr-2" />
                   {isLoading ? 'Verarbeite...' : 'Bild hochladen'}
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-
-                {/* URL Input */}
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                 <div className="divider text-xs">ODER</div>
                 <div className="flex gap-2">
                   <input
@@ -238,11 +237,7 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                     value={coverUrl}
                     onChange={(e) => handleUrlChange(e.target.value)}
                   />
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => handleUrlChange(coverUrl)}
-                  >
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => handleUrlChange(coverUrl)}>
                     <LinkIcon className="w-4 h-4" />
                   </button>
                 </div>
@@ -256,40 +251,30 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
               <span className="label-text">Status</span>
             </label>
             <div className="flex gap-2">
-              <label className="btn btn-sm flex-1">
-                <input
-                  type="radio"
-                  name="status"
-                  className="radio radio-xs mr-2"
-                  checked={status === 'unread'}
-                  onChange={() => setStatus('unread')}
-                />
-                Ungelesen
-              </label>
-              <label className="btn btn-sm flex-1">
-                <input
-                  type="radio"
-                  name="status"
-                  className="radio radio-xs mr-2"
-                  checked={status === 'reading'}
-                  onChange={() => setStatus('reading')}
-                />
-                Lese ich
-              </label>
-              <label className="btn btn-sm flex-1">
-                <input
-                  type="radio"
-                  name="status"
-                  className="radio radio-xs mr-2"
-                  checked={status === 'finished'}
-                  onChange={() => setStatus('finished')}
-                />
-                Gelesen
-              </label>
+              {['unread', 'reading', 'finished'].map((s) => (
+                <label key={s} className="btn btn-sm flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="status"
+                    className="radio radio-xs mr-2"
+                    checked={status === s}
+                    onChange={() => setStatus(s as 'unread' | 'reading' | 'finished')}
+                  />
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </label>
+              ))}
             </div>
           </div>
 
-          {/* Series Assignment (Optional) */}
+          {/* Rating */}
+          <div className="form-control mb-6">
+            <label className="label">
+              <span className="label-text">Bewertung</span>
+            </label>
+            {renderStars()}
+          </div>
+
+          {/* Serie Zuweisen */}
           <div className="form-control mb-6">
             <label className="label cursor-pointer">
               <span className="label-text">Teil einer Buchreihe?</span>
@@ -300,7 +285,6 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                 onChange={(e) => setAssignToSeries(e.target.checked)}
               />
             </label>
-            
             {assignToSeries && (
               <div className="mt-3 space-y-3">
                 <select
@@ -309,13 +293,12 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                   onChange={(e) => setSelectedSeriesId(e.target.value)}
                 >
                   <option value="">Buchreihe wählen...</option>
-                  {allSeries?.map(series => (
+                  {allSeries?.map((series) => (
                     <option key={series.id} value={series.id}>
                       {series.name}
                     </option>
                   ))}
                 </select>
-                
                 {selectedSeriesId && (
                   <input
                     type="number"
@@ -323,21 +306,15 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
                     placeholder="Band-Nummer"
                     value={seriesPosition}
                     onChange={(e) => setSeriesPosition(parseInt(e.target.value) || 1)}
-                    min="1"
+                    min={1}
                   />
                 )}
               </div>
             )}
           </div>
 
-          {/* Actions */}
           <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={onClose}
-              disabled={isLoading}
-            >
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={isLoading}>
               Abbrechen
             </button>
             <button
@@ -347,8 +324,7 @@ export function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
             >
               {isLoading ? (
                 <>
-                  <span className="loading loading-spinner loading-sm mr-2"></span>
-                  Speichere...
+                  <span className="loading loading-spinner loading-sm mr-2"></span>Speichere...
                 </>
               ) : (
                 'Hinzufügen'
