@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series } from '@/lib/db'
-import { fetchBookByISBN } from '@/lib/books'
-import { ManualISBNInput } from '@/components/ManualISBNInput'
+import { BookSearch } from '@/components/BookSearch'
 import { AddBookModal } from '@/components/AddBookModal'
 import { Header } from '@/components/Header'
 import { BookCard } from '@/components/BookCard'
@@ -35,13 +34,8 @@ export default function HomePage() {
 
   const standaloneBooks = allBooks?.filter((book) => !book.seriesId)
 
-  async function handleISBNSubmit(isbn: string) {
-    try {
-      const book = await fetchBookByISBN(isbn)
-      setPreFillBookData(book)
-    } catch {
-      alert('Kein Buch gefunden für den eingegebenen ISBN-Code.')
-    }
+  function handleBookSelect(book: { title: string; authors: string; coverUrl: string }) {
+    setPreFillBookData(book)
   }
 
   if (!allBooks || !allSeries) {
@@ -63,9 +57,9 @@ export default function HomePage() {
             <p className="text-base-content/60 mb-8">
               Füge dein erstes Buch hinzu oder erstelle eine Buchreihe!
             </p>
-            
+
             <div className="mb-6">
-              <ManualISBNInput onISBNSubmit={handleISBNSubmit} />
+              <BookSearch onBookSelect={handleBookSelect} />
             </div>
 
             <div className="flex gap-2 justify-center">
@@ -97,13 +91,8 @@ export default function HomePage() {
       <Header />
 
       <div className="container mx-auto px-4 py-6">
-        <div className="mb-4 flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <ManualISBNInput onISBNSubmit={handleISBNSubmit} />
-          </div>
-          <div className="flex gap-2">
-            <AddBookButton />
-          </div>
+        <div className="mb-4">
+          <BookSearch onBookSelect={handleBookSelect} />
         </div>
 
         {preFillBookData && (
