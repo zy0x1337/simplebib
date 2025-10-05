@@ -1,26 +1,44 @@
-@import "tailwindcss";
+/* 🎯 PWA-Pattern: Minimal Global Styles */
+/* ⚡ Performance-Critical: Critical CSS only */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  /* Smooth Scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Prevent iOS Zoom on Input Focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  
+  /* Hide Scrollbar but keep functionality */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: oklch(var(--bc) / 0.2);
+    border-radius: 4px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Card Component für Book Items */
+  .book-card {
+    @apply card bg-base-100 shadow-md hover:shadow-lg transition-shadow;
+  }
+  
+  /* Rating Stars */
+  .rating-star {
+    @apply cursor-pointer text-warning transition-all hover:scale-110;
+  }
 }
