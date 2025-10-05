@@ -35,6 +35,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#4f46e5" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider>
           {children}
