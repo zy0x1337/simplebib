@@ -29,7 +29,6 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // URL-Objekt freigeben, um Speicherlecks zu vermeiden
   useEffect(() => {
     return () => {
       if (coverPreview && coverType === 'upload') {
@@ -38,7 +37,6 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
     }
   }, [coverPreview, coverType])
 
-  // Synchronisiere vorgefüllte Daten beim Öffnen
   useEffect(() => {
     if (isOpen && preFill) {
       setTitle(preFill.title)
@@ -104,6 +102,10 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
       alert('Titel und Autor sind Pflichtfelder')
       return
     }
+    if (assignToSeries && !selectedSeriesId) {
+      alert('Bitte eine Buchreihe auswählen')
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -115,10 +117,12 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
         coverBlob: coverType === 'upload' ? coverBlob! : undefined,
         status,
         rating,
-        seriesId: assignToSeries && selectedSeriesId ? selectedSeriesId : undefined,
-        seriesPosition: assignToSeries && selectedSeriesId ? seriesPosition : undefined,
+        seriesId: assignToSeries ? selectedSeriesId : undefined,
+        seriesPosition: assignToSeries ? seriesPosition : undefined,
         dateAdded: new Date(),
       }
+
+      console.log('Speichere Buch mit Daten:', newBook)
 
       await db.books.add(newBook as Book)
 
@@ -314,51 +318,6 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
               <span className="label-text">Bewertung</span>
             </label>
             {renderStars()}
-          </div>
-
-          {/* Buchreihe zuordnen */}
-          <div className="form-control mb-6">
-            <label className="label cursor-pointer">
-              <span className="label-text">Teil einer Buchreihe?</span>
-              <input
-                type="checkbox"
-                className="toggle"
-                checked={assignToSeries}
-                onChange={(e) => setAssignToSeries(e.target.checked)}
-                disabled={isLoading}
-                aria-checked={assignToSeries}
-              />
-            </label>
-            {assignToSeries && (
-              <div className="mt-3 space-y-3">
-                <select
-                  className="select select-bordered w-full"
-                  value={selectedSeriesId}
-                  onChange={(e) => setSelectedSeriesId(e.target.value)}
-                  disabled={isLoading}
-                  aria-label="Buchreihe auswählen"
-                >
-                  <option value="">Buchreihe wählen...</option>
-                  {seriesList?.map((serie) => (
-                    <option key={serie.id} value={serie.id}>
-                      {serie.name}
-                    </option>
-                  ))}
-                </select>
-                {selectedSeriesId && (
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    placeholder="Band-Nummer"
-                    value={seriesPosition}
-                    onChange={(e) => setSeriesPosition(Math.max(1, parseInt(e.target.value) || 1))}
-                    min={1}
-                    disabled={isLoading}
-                    aria-label="Bandnummer der Buchreihe"
-                  />
-                )}
-              </div>
-            )}
           </div>
 
           <div className="modal-action">
