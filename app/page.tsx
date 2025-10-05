@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series } from '@/lib/db'
 import { fetchBookByISBN } from '@/lib/books'
-import { ISBNScannerButton } from '@/components/ISBNScannerButton'
+import { ManualISBNInput } from '@/components/ManualISBNInput'
 import { AddBookModal } from '@/components/AddBookModal'
 import { Header } from '@/components/Header'
 import { BookCard } from '@/components/BookCard'
@@ -35,12 +35,12 @@ export default function HomePage() {
 
   const standaloneBooks = allBooks?.filter((book) => !book.seriesId)
 
-  async function handleISBNScan(isbn: string) {
+  async function handleISBNSubmit(isbn: string) {
     try {
       const book = await fetchBookByISBN(isbn)
       setPreFillBookData(book)
     } catch {
-      alert('Kein Buch gefunden für den gescannten ISBN-Code.')
+      alert('Kein Buch gefunden für den eingegebenen ISBN-Code.')
     }
   }
 
@@ -63,9 +63,13 @@ export default function HomePage() {
             <p className="text-base-content/60 mb-8">
               Füge dein erstes Buch hinzu oder erstelle eine Buchreihe!
             </p>
+            
+            <div className="mb-6">
+              <ManualISBNInput onISBNSubmit={handleISBNSubmit} />
+            </div>
+
             <div className="flex gap-2 justify-center">
               <AddBookButton />
-              <ISBNScannerButton onISBNScanned={handleISBNScan} />
               <button
                 className="btn btn-outline"
                 onClick={() => setIsSeriesModalOpen(true)}
@@ -92,20 +96,24 @@ export default function HomePage() {
     <div className="min-h-screen bg-base-200">
       <Header />
 
-      <div className="container mx-auto px-4 py-6 mb-4 flex gap-2">
-        <AddBookButton />
-        <ISBNScannerButton onISBNScanned={handleISBNScan} />
-      </div>
-
-      {preFillBookData && (
-        <AddBookModal
-          isOpen={true}
-          preFill={preFillBookData}
-          onClose={() => setPreFillBookData(null)}
-        />
-      )}
-
       <div className="container mx-auto px-4 py-6">
+        <div className="mb-4 flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <ManualISBNInput onISBNSubmit={handleISBNSubmit} />
+          </div>
+          <div className="flex gap-2">
+            <AddBookButton />
+          </div>
+        </div>
+
+        {preFillBookData && (
+          <AddBookModal
+            isOpen={true}
+            preFill={preFillBookData}
+            onClose={() => setPreFillBookData(null)}
+          />
+        )}
+
         <div className="tabs tabs-boxed mb-6 bg-base-100 p-1">
           <a
             className={`tab flex-1 ${activeTab === 'books' ? 'tab-active' : ''}`}
