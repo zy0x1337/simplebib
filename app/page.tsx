@@ -3,23 +3,26 @@
 import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series } from '@/lib/db'
+import { fetchBookByISBN } from '@/lib/books'
+import { ISBNScannerButton } from '@/components/ISBNScannerButton'
+import { AddBookModal } from '@/components/AddBookModal'
+import { Header } from '@/components/Header'
 import { BookCard } from '@/components/BookCard'
 import { SeriesCard } from '@/components/SeriesCard'
 import { AddBookButton } from '@/components/AddBookButton'
-import { Header } from '@/components/Header'
-import { BookPlus, Library, Grid3x3, List } from 'lucide-react'
 import { AddSeriesModal } from '@/components/AddSeriesModal'
+import { BookPlus, Library, Grid3x3, List } from 'lucide-react'
 
 export default function HomePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [activeTab, setActiveTab] = useState<'books' | 'series'>('books')
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false)
   const [sortedSeries, setSortedSeries] = useState<Series[]>([])
+  const [preFillBookData, setPreFillBookData] = useState<{ title: string; authors: string; coverUrl: string } | null>(null)
 
   const allBooks = useLiveQuery(() => db.books.toArray())
   const allSeries = useLiveQuery(() => db.series.toArray())
 
-  // Update sortedSeries when allSeries changes
   useEffect(() => {
     if (!allSeries) return
     const sorted = [...allSeries].sort((a, b) => {
@@ -30,7 +33,16 @@ export default function HomePage() {
     setSortedSeries(sorted)
   }, [allSeries])
 
-  const standaloneBooks = allBooks?.filter(book => !book.seriesId)
+  const standaloneBooks = allBooks?.filter((book) => !book.seriesId)
+
+  async function handleISBNScan(isbn: string) {
+    try {
+      const book = await fetchBookByISBN(isbn)
+      setPreFillBookData(book)
+    } catch {
+      alert('Kein Buch gefunden für den gescannten ISBN-Code.')
+    }
+  }
 
   if (!allBooks || !allSeries) {
     return (
@@ -53,6 +65,7 @@ export default function HomePage() {
             </p>
             <div className="flex gap-2 justify-center">
               <AddBookButton />
+              <ISBNScannerButton onISBNScanned={handleISBNScan} />
               <button
                 className="btn btn-outline"
                 onClick={() => setIsSeriesModalOpen(true)}
@@ -63,10 +76,14 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <AddSeriesModal
-          isOpen={isSeriesModalOpen}
-          onClose={() => setIsSeriesModalOpen(false)}
-        />
+        <AddSeriesModal isOpen={isSeriesModalOpen} onClose={() => setIsSeriesModalOpen(false)} />
+        {preFillBookData && (
+          <AddBookModal
+            isOpen={true}
+            preFill={preFillBookData}
+            onClose={() => setPreFillBookData(null)}
+          />
+        )}
       </div>
     )
   }
@@ -74,6 +91,19 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-base-200">
       <Header />
+
+      <div className="container mx-auto px-4 py-6 mb-4 flex gap-2">
+        <AddBookButton />
+        <ISBNScannerButton onISBNScanned={handleISBNScan} />
+      </div>
+
+      {preFillBookData && (
+        <AddBookModal
+          isOpen={true}
+          preFill={preFillBookData}
+          onClose={() => setPreFillBookData(null)}
+        />
+      )}
 
       <div className="container mx-auto px-4 py-6">
         <div className="tabs tabs-boxed mb-6 bg-base-100 p-1">
@@ -158,10 +188,7 @@ export default function HomePage() {
         <AddBookButton />
       </div>
 
-      <AddSeriesModal
-        isOpen={isSeriesModalOpen}
-        onClose={() => setIsSeriesModalOpen(false)}
-      />
+      <AddSeriesModal isOpen={isSeriesModalOpen} onClose={() => setIsSeriesModalOpen(false)} />
     </div>
   )
 }
