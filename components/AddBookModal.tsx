@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Book, updateSeriesRating } from '@/lib/db'
 import { X, Upload, Link as LinkIcon } from 'lucide-react'
 import { compressImage } from '@/lib/imageUtils'
@@ -12,6 +13,8 @@ interface AddBookModalProps {
 }
 
 export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
+  const seriesList = useLiveQuery(() => db.series.toArray(), [])
+
   const [title, setTitle] = useState(preFill?.title || '')
   const [author, setAuthor] = useState(preFill?.authors || '')
   const [coverType, setCoverType] = useState<'none' | 'upload' | 'url'>(preFill ? 'url' : 'none')
@@ -25,6 +28,15 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
   const [seriesPosition, setSeriesPosition] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // URL-Objekt freigeben, um Speicherlecks zu vermeiden
+  useEffect(() => {
+    return () => {
+      if (coverPreview && coverType === 'upload') {
+        URL.revokeObjectURL(coverPreview)
+      }
+    }
+  }, [coverPreview, coverType])
 
   // Synchronisiere vorgefüllte Daten beim Öffnen
   useEffect(() => {
@@ -88,7 +100,6 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!title.trim() || !author.trim()) {
       alert('Titel und Autor sind Pflichtfelder')
       return
@@ -109,7 +120,7 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
         dateAdded: new Date(),
       }
 
-      const id = await db.books.add(newBook as Book)
+      await db.books.add(newBook as Book)
 
       if (assignToSeries && selectedSeriesId) {
         await updateSeriesRating(selectedSeriesId)
@@ -142,6 +153,8 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
             key={i}
             onClick={() => setRating(i)}
             className="cursor-pointer text-yellow-400 text-xl"
+            role="button"
+            aria-label={`${i} Sterne`}
           >
             ★
           </span>
@@ -152,6 +165,8 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
             key={i}
             onClick={() => setRating(i - 0.5)}
             className="cursor-pointer text-yellow-400 text-xl"
+            role="button"
+            aria-label={`${i - 0.5} Sterne`}
           >
             ☆
           </span>
@@ -162,6 +177,8 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
             key={i}
             onClick={() => setRating(i)}
             className="cursor-pointer text-gray-300 text-xl"
+            role="button"
+            aria-label={`0 Sterne`}
           >
             ★
           </span>
@@ -178,7 +195,7 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
       <div className="modal-box max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-lg">Neues Buch hinzufügen</h3>
-          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose} disabled={isLoading}>
+          <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose} disabled={isLoading} aria-label="Modal schließen">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -227,6 +244,7 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
                   className="btn btn-sm btn-circle btn-error absolute top-2 right-2"
                   onClick={removeCover}
                   disabled={isLoading}
+                  aria-label="Cover entfernen"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -260,7 +278,7 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
                     onChange={(e) => handleUrlChange(e.target.value)}
                     disabled={isLoading}
                   />
-                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => handleUrlChange(coverUrl)} disabled={isLoading}>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => handleUrlChange(coverUrl)} disabled={isLoading} aria-label="Cover URL verwenden">
                     <LinkIcon className="w-4 h-4" />
                   </button>
                 </div>
@@ -275,7 +293,7 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
             </label>
             <div className="flex gap-2">
               {['unread', 'reading', 'finished'].map((s) => (
-                <label key={s} className="btn btn-sm flex-1 cursor-pointer">
+                <label key={s} className="btn btn-sm flex-1 cursor-pointer" aria-label={`Status ${s}`}>
                   <input
                     type="radio"
                     name="status"
@@ -308,6 +326,7 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
                 checked={assignToSeries}
                 onChange={(e) => setAssignToSeries(e.target.checked)}
                 disabled={isLoading}
+                aria-checked={assignToSeries}
               />
             </label>
             {assignToSeries && (
@@ -317,9 +336,14 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
                   value={selectedSeriesId}
                   onChange={(e) => setSelectedSeriesId(e.target.value)}
                   disabled={isLoading}
+                  aria-label="Buchreihe auswählen"
                 >
                   <option value="">Buchreihe wählen...</option>
-                  {/* TODO: Serienliste per liveQuery laden */}
+                  {seriesList?.map((serie) => (
+                    <option key={serie.id} value={serie.id}>
+                      {serie.name}
+                    </option>
+                  ))}
                 </select>
                 {selectedSeriesId && (
                   <input
@@ -327,9 +351,10 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
                     className="input input-bordered w-full"
                     placeholder="Band-Nummer"
                     value={seriesPosition}
-                    onChange={(e) => setSeriesPosition(parseInt(e.target.value) || 1)}
+                    onChange={(e) => setSeriesPosition(Math.max(1, parseInt(e.target.value) || 1))}
                     min={1}
                     disabled={isLoading}
+                    aria-label="Bandnummer der Buchreihe"
                   />
                 )}
               </div>

@@ -1,35 +1,35 @@
 export async function fetchBookByISBN(isbn: string) {
   const cleanISBN = isbn.replace(/-/g, '')
   const res = await fetch(
-    `https://openlibrary.org/api/books?bibkeys=ISBN:${cleanISBN}&format=json&jscmd=data`
+    `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`
   )
   const data = await res.json()
-  const bookData = data[`ISBN:${cleanISBN}`]
-  if (!bookData) throw new Error('Buch nicht gefunden')
+  if (!data.items || data.items.length === 0) throw new Error('Buch nicht gefunden')
+
+  const bookData = data.items[0].volumeInfo
   return {
-    title: bookData.title,
-    authors: (bookData.authors || []).map((a: any) => a.name).join(', '),
-    coverUrl: bookData.cover?.medium || '',
+    title: bookData.title || '',
+    authors: bookData.authors ? bookData.authors.join(', ') : 'Unbekannter Autor',
+    coverUrl: bookData.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
+    description: bookData.description || '',
+    publishedDate: bookData.publishedDate || ''
   }
 }
 
 export async function fetchBookByTitle(title: string) {
   const res = await fetch(
-    `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&limit=5`
+    `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(title)}&maxResults=10`
   )
   const data = await res.json()
-  
-  if (!data.docs || data.docs.length === 0) {
-    throw new Error('Kein Buch gefunden')
-  }
+  if (!data.items || data.items.length === 0) throw new Error('Kein Buch gefunden')
 
-  // Gebe mehrere Ergebnisse zurück, damit Nutzer auswählen kann
-  return data.docs.map((doc: any) => ({
-    title: doc.title,
-    authors: doc.author_name ? doc.author_name.join(', ') : 'Unbekannter Autor',
-    coverUrl: doc.cover_i 
-      ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
-      : '',
-    year: doc.first_publish_year || null,
-  }))
+  return data.items.map((item: any) => {
+    const info = item.volumeInfo
+    return {
+      title: info.title || '',
+      authors: info.authors ? info.authors.join(', ') : 'Unbekannter Autor',
+      coverUrl: info.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
+      publishedDate: info.publishedDate || '',
+    }
+  })
 }

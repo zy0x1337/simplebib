@@ -28,47 +28,45 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
 
     try {
       if (searchType === 'isbn') {
-        // ISBN-Suche
         const cleanISBN = searchQuery.replace(/-/g, '')
         const res = await fetch(
-          `https://openlibrary.org/api/books?bibkeys=ISBN:${cleanISBN}&format=json&jscmd=data`
+          `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`
         )
         const data = await res.json()
-        const bookData = data[`ISBN:${cleanISBN}`]
-        
-        if (!bookData) {
+        if (!data.items || data.items.length === 0) {
           alert('Kein Buch mit dieser ISBN gefunden')
           return
         }
 
+        const bookData = data.items[0].volumeInfo
         const book = {
           title: bookData.title,
-          authors: (bookData.authors || []).map((a: any) => a.name).join(', '),
-          coverUrl: bookData.cover?.medium || '',
+          authors: bookData.authors ? bookData.authors.join(', ') : 'Unbekannter Autor',
+          coverUrl: bookData.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
         }
 
         onBookSelect(book)
         setSearchQuery('')
       } else {
-        // Titel-Suche
         const res = await fetch(
-          `https://openlibrary.org/search.json?title=${encodeURIComponent(searchQuery)}&limit=10`
+          `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(searchQuery)}&maxResults=10`
         )
         const data = await res.json()
 
-        if (!data.docs || data.docs.length === 0) {
+        if (!data.items || data.items.length === 0) {
           alert('Kein Buch mit diesem Titel gefunden')
           return
         }
 
-        const results = data.docs.map((doc: any) => ({
-          title: doc.title,
-          authors: doc.author_name ? doc.author_name.join(', ') : 'Unbekannter Autor',
-          coverUrl: doc.cover_i
-            ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
-            : '',
-          year: doc.first_publish_year || null,
-        }))
+        const results = data.items.map((item: any) => {
+          const info = item.volumeInfo
+          return {
+            title: info.title || '',
+            authors: info.authors ? info.authors.join(', ') : 'Unbekannter Autor',
+            coverUrl: info.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
+            publishedDate: info.publishedDate || '',
+          }
+        })
 
         setSearchResults(results)
         setShowResults(true)
@@ -90,14 +88,12 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
   return (
     <div className="w-full">
       <form onSubmit={handleSearch} className="flex flex-col gap-3">
-        {/* Auswahl: ISBN oder Titel */}
         <div className="tabs tabs-boxed">
           <a
             className={`tab ${searchType === 'isbn' ? 'tab-active' : ''}`}
             onClick={() => {
               setSearchType('isbn')
               setSearchQuery('')
-              setSearchResults([])
               setShowResults(false)
             }}
           >
@@ -108,7 +104,6 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
             onClick={() => {
               setSearchType('title')
               setSearchQuery('')
-              setSearchResults([])
               setShowResults(false)
             }}
           >
@@ -116,7 +111,6 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
           </a>
         </div>
 
-        {/* Suchfeld */}
         <div className="flex gap-2">
           <input
             type="text"
@@ -150,7 +144,6 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
         </div>
       </form>
 
-      {/* Suchergebnisse bei Titel-Suche */}
       {showResults && searchResults.length > 0 && (
         <div className="mt-4 space-y-2">
           <h3 className="font-semibold text-sm">Suchergebnisse:</h3>
@@ -176,9 +169,9 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
                   <div className="flex-1">
                     <h4 className="font-semibold text-sm">{result.title}</h4>
                     <p className="text-xs text-base-content/60">{result.authors}</p>
-                    {result.year && (
+                    {result.publishedDate && (
                       <p className="text-xs text-base-content/40 mt-1">
-                        Erstveröffentlichung: {result.year}
+                        Erstveröffentlichung: {result.publishedDate}
                       </p>
                     )}
                   </div>
