@@ -1,5 +1,9 @@
-const config = {
-  plugins: ["@tailwindcss/postcss"],
-};
+// 🎯 PostCSS Configuration für Tailwind
+// ✅ Next.js 15 kompatibel
 
-export default config;
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}

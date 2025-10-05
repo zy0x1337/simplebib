@@ -1,9 +1,9 @@
 // 🎯 PWA-Pattern: Root Layout mit Theme & Metadata
-// ✅ TypeScript Strict Mode
+// ✅ Next.js 15 kompatibel (viewport getrennt)
 // ⚡ Performance-Critical: Minimal CSS
 // 📱 App-like UX: Native Feel
 
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -13,14 +13,19 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'SimpleBib - Dein Buch-Tracker',
   description: 'Einfacher Tracker für deine gelesenen Bücher und Buchreihen',
-  manifest: '/manifest.json',
-  themeColor: '#4f46e5',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'SimpleBib',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#4f46e5',
 }
 
 export default function RootLayout({
