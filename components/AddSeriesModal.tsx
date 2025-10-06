@@ -83,23 +83,6 @@ export function AddSeriesModal({ isOpen, onClose }: AddSeriesModalProps) {
             />
           </div>
 
-          {/* Total Books (optional) */}
-          <div className="form-control mb-6">
-            <label className="label">
-              <span className="label-text">Anzahl Bände (geschätzt)</span>
-            </label>
-            <input
-              type="number"
-              className="input input-bordered w-full"
-              value={totalBooks}
-              onChange={(e) => setTotalBooks(parseInt(e.target.value) || 1)}
-              min="1"
-            />
-            <label className="label">
-              <span className="label-text-alt">Kann später angepasst werden</span>
-            </label>
-          </div>
-
           {/* Actions */}
           <div className="modal-action">
             <button

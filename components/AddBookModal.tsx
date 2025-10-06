@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Book, updateSeriesRating } from '@/lib/db'
-import { X, Upload, Link as LinkIcon } from 'lucide-react'
+import { X, Upload, Link as LinkIcon, Star, StarHalf } from 'lucide-react'
 import { compressImage } from '@/lib/imageUtils'
 
 interface AddBookModalProps {
@@ -147,50 +147,44 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
     }
   }
 
-  // Sterne Rating UI (vereinfacht)
-  const renderStars = () => {
-    const stars = []
-    for (let i = 1; i <= 5; i++) {
-      if (rating >= i) {
-        stars.push(
-          <span
-            key={i}
-            onClick={() => setRating(i)}
-            className="cursor-pointer text-yellow-400 text-xl"
-            role="button"
-            aria-label={`${i} Sterne`}
-          >
-            ★
-          </span>
-        )
-      } else if (rating >= i - 0.5) {
-        stars.push(
-          <span
-            key={i}
-            onClick={() => setRating(i - 0.5)}
-            className="cursor-pointer text-yellow-400 text-xl"
-            role="button"
-            aria-label={`${i - 0.5} Sterne`}
-          >
-            ☆
-          </span>
-        )
-      } else {
-        stars.push(
-          <span
-            key={i}
-            onClick={() => setRating(i)}
-            className="cursor-pointer text-gray-300 text-xl"
-            role="button"
-            aria-label={`0 Sterne`}
-          >
-            ★
-          </span>
-        )
-      }
+// Sternbewertung UI mit Lucide Icons
+const renderStars = () => {
+  const stars = []
+  for (let i = 1; i <= 5; i++) {
+    const isFilled = rating >= i
+    const isHalf = rating >= i - 0.5 && rating < i
+    
+    if (isFilled) {
+      stars.push(
+        <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+      )
+    } else if (isHalf) {
+      stars.push(
+        <StarHalf key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+      )
+    } else {
+      stars.push(
+        <Star key={i} className="w-6 h-6 text-gray-300" />
+      )
     }
-    return <div className="flex gap-1">{stars}</div>
   }
+  
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-1">{stars}</div>
+      <input
+        type="range"
+        min="0"
+        max="5"
+        step="0.5"
+        value={rating}
+        onChange={(e) => setRating(parseFloat(e.target.value))}
+        className="range range-xs"
+      />
+      <div className="text-sm text-center">{rating > 0 ? `${rating} / 5` : 'Keine Bewertung'}</div>
+    </div>
+  )
+}
 
   if (!isOpen) return null
 

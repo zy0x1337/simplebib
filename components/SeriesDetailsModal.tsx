@@ -1,14 +1,10 @@
-// 🎯 PWA-Pattern: Series Details mit Büchern
-// ✅ TypeScript Strict Mode
-// 📱 Manage books in series
-
 'use client'
 
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, Series } from '@/lib/db'
-import { X, Plus, Trash2, BookOpen } from 'lucide-react'
+import { db, Series, Book } from '@/lib/db'
 import { BookCard } from './BookCard'
+import { X, Plus, Trash2, Edit2, Save } from 'lucide-react'
 import { AddBookToSeriesModal } from './AddBookToSeriesModal'
 
 interface SeriesDetailsModalProps {
@@ -19,136 +15,146 @@ interface SeriesDetailsModalProps {
 
 export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsModalProps) {
   const [isAddBookOpen, setIsAddBookOpen] = useState(false)
+  const [isEditingSeries, setIsEditingSeries] = useState(false)
+  const [editedSeriesName, setEditedSeriesName] = useState(series.name)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
-  // Get books in series, sorted by position
   const booksInSeries = useLiveQuery(
-    () => db.books
-      .where('seriesId')
-      .equals(series.id!)
-      .toArray()
-      .then(books => books.sort((a, b) => (a.seriesPosition || 0) - (b.seriesPosition || 0))),
+    () =>
+      db.books
+        .where('seriesId')
+        .equals(series.id!)
+        .toArray()
+        .then(books => books.sort((a, b) => (a.seriesPosition ?? 0) - (b.seriesPosition ?? 0))),
     [series.id]
   )
 
-  // Delete Series
   const handleDelete = async () => {
-    if (!confirm(`Buchreihe "${series.name}" wirklich löschen?\n\nDie Bücher bleiben erhalten, werden aber aus der Serie entfernt.`)) {
-      return
-    }
-
+    if (!confirm(`Buchreihe "${series.name}" wirklich löschen? Bücher bleiben erhalten.`)) return
     setIsDeleting(true)
     try {
-      // Remove series reference from all books
-      const books = await db.books.where('seriesId').equals(series.id!).toArray()
-      for (const book of books) {
-        await db.books.update(book.id!, { seriesId: undefined, seriesPosition: undefined })
-      }
-
-      // Delete series
+      const booksToUpdate = await db.books.where('seriesId').equals(series.id!).toArray()
+      await Promise.all(
+        booksToUpdate.map(book => db.books.update(book.id!, { seriesId: undefined, seriesPosition: undefined }))
+      )
       await db.series.delete(series.id!)
       onClose()
-    } catch (error) {
-      console.error('Failed to delete series:', error)
-      alert('Fehler beim Löschen der Buchreihe')
     } finally {
       setIsDeleting(false)
     }
   }
 
+  const handleSaveSeriesName = async () => {
+    if (!editedSeriesName.trim()) {
+      alert('Name der Buchreihe darf nicht leer sein')
+      return
+    }
+    
+    setIsSaving(true)
+    try {
+      await db.series.update(series.id!, { name: editedSeriesName.trim() })
+      series.name = editedSeriesName.trim()
+      setIsEditingSeries(false)
+    } catch (error) {
+      alert('Fehler beim Speichern')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Wenn AddBookModal geöffnet wird, zeige nur das an
+  if (isAddBookOpen) {
+    return (
+      <AddBookToSeriesModal
+        isOpen={isAddBookOpen}
+        onClose={() => setIsAddBookOpen(false)}
+        series={series}
+      />
+    )
+  }
+
   if (!isOpen) return null
 
   return (
-    <>
-      <div className="modal modal-open">
-        <div className="modal-box max-w-2xl">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="font-bold text-xl pr-8">{series.name}</h3>
-              <p className="text-sm text-base-content/60 mt-1">
-                {booksInSeries?.length || 0} Bücher in dieser Reihe
-              </p>
+    <div className="modal modal-open">
+      <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          {isEditingSeries ? (
+            <div className="flex gap-2 items-center flex-1">
+              <input
+                type="text"
+                value={editedSeriesName}
+                onChange={(e) => setEditedSeriesName(e.target.value)}
+                className="input input-bordered flex-1"
+                disabled={isSaving}
+              />
+              <button
+                className="btn btn-success btn-sm"
+                onClick={handleSaveSeriesName}
+                disabled={isSaving}
+              >
+                <Save className="w-4 h-4" />
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  setIsEditingSeries(false)
+                  setEditedSeriesName(series.name)
+                }}
+                disabled={isSaving}
+              >
+                Abbrechen
+              </button>
             </div>
-            <button
-              className="btn btn-sm btn-circle btn-ghost"
-              onClick={onClose}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Books Grid */}
-          <div className="mb-6">
-            {!booksInSeries || booksInSeries.length === 0 ? (
-              <div className="text-center py-12 text-base-content/60">
-                <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p>Noch keine Bücher in dieser Reihe</p>
+          ) : (
+            <>
+              <h3 className="font-bold text-xl">{series.name}</h3>
+              <div className="flex gap-2">
                 <button
-                  className="btn btn-sm btn-primary mt-4"
-                  onClick={() => setIsAddBookOpen(true)}
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => setIsEditingSeries(true)}
+                  aria-label="Buchreihe bearbeiten"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Erstes Buch hinzufügen
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose} aria-label="Schließen">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
-                  {booksInSeries.map((book) => (
-                    <div key={book.id} className="relative">
-                      {book.seriesPosition && (
-                        <div className="absolute top-2 left-2 z-10 badge badge-sm badge-primary">
-                          Band {book.seriesPosition}
-                        </div>
-                      )}
-                      <BookCard book={book} viewMode="grid" />
-                    </div>
-                  ))}
-                </div>
-                <button
-                  className="btn btn-sm btn-outline btn-block"
-                  onClick={() => setIsAddBookOpen(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Weiteres Buch hinzufügen
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="modal-action">
-            <button
-              className="btn btn-error btn-outline btn-sm"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <>
-                  <span className="loading loading-spinner loading-sm mr-2"></span>
-                  Lösche...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Serie löschen
-                </>
-              )}
-            </button>
-            <button className="btn btn-sm" onClick={onClose}>
-              Schließen
-            </button>
-          </div>
+            </>
+          )}
         </div>
-        <div className="modal-backdrop" onClick={onClose}></div>
-      </div>
 
-      <AddBookToSeriesModal
-        series={series}
-        isOpen={isAddBookOpen}
-        onClose={() => setIsAddBookOpen(false)}
-      />
-    </>
+        <button className="btn btn-primary mb-4" onClick={() => setIsAddBookOpen(true)}>
+          <Plus className="w-5 h-5 mr-2" />
+          Buch hinzufügen
+        </button>
+
+        {(!booksInSeries || booksInSeries.length === 0) && (
+          <p className="text-center text-sm text-gray-500 py-8">Noch keine Bücher in dieser Reihe</p>
+        )}
+
+        {booksInSeries && booksInSeries.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {booksInSeries.map((book: Book) => (
+              <BookCard key={book.id} book={book} viewMode="grid" />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-6">
+          <button
+            className="btn btn-error btn-sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            {isDeleting ? 'Löscht...' : 'Buchreihe löschen'}
+          </button>
+        </div>
+      </div>
+      <div className="modal-backdrop" onClick={onClose}></div>
+    </div>
   )
 }
