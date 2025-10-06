@@ -1,6 +1,6 @@
 # 📚 SimpleBib
 
-A simple, offline-first book tracker built with Next.js and TypeScript. Track your reading progress, organize books into series, and search via Google Books API - all without a backend.
+A simple, offline-first book tracker built with Next.js and TypeScript. Track and update your reading status, organize books into series, and search via Google Books API - all without a backend.
 
 ## Features
 
@@ -24,7 +24,6 @@ pnpm dev
 Build for production
 pnpm build
 
-text
 
 Open [http://localhost:3000](http://localhost:3000)
 
@@ -39,15 +38,18 @@ Open [http://localhost:3000](http://localhost:3000)
 ## Project Structure
 
 simplebib/
+
 ├── app/ # Next.js pages
+
 ├── components/ # React components
+
 ├── lib/
+
 │ ├── db.ts # Database schema
+
 │ └── imageUtils.ts # Image compression
+
 └── public/ # Static assets
-
-text
-
 ## License
 
 MIT
