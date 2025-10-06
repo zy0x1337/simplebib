@@ -426,9 +426,6 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
             <Trash2 className="w-4 h-4 mr-2" />
             {isDeleting ? 'Löscht...' : 'Löschen'}
           </button>
-          <button className="btn" onClick={onClose}>
-            Schließen
-          </button>
         </div>
       </div>
       <div className="modal-backdrop" onClick={onClose}></div>

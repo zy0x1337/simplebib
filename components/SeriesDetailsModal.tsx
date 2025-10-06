@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series, Book } from '@/lib/db'
-import { X, Plus, Trash2, BookOpen, Star, StarHalf } from 'lucide-react'
+import { X, Plus, Trash2, BookOpen, Star, StarHalf, Edit } from 'lucide-react'
 import { AddBookToSeriesModal } from './AddBookToSeriesModal'
 import { BookDetailsModal } from './BookDetailsModal'
 
@@ -17,6 +17,8 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   const [isAddBookOpen, setIsAddBookOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editedName, setEditedName] = useState(series.name)
 
   // Get books in series, sorted by position
   const booksInSeries = useLiveQuery(
@@ -58,6 +60,14 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
     return badges[status]
   }
 
+  // Save edited name
+  const handleSaveName = async () => {
+    if (editedName.trim() && editedName !== series.name) {
+      await db.series.update(series.id!, { name: editedName.trim() })
+    }
+    setIsEditingName(false)
+  }
+
   // Delete Series
   const handleDelete = async () => {
     if (
@@ -95,8 +105,51 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
         <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex justify-between items-start mb-6">
-            <div>
-              <h3 className="font-bold text-2xl">{series.name}</h3>
+            <div className="flex-1">
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveName()
+                      if (e.key === 'Escape') {
+                        setEditedName(series.name)
+                        setIsEditingName(false)
+                      }
+                    }}
+                    className="input input-bordered input-sm font-bold text-xl flex-1"
+                    autoFocus
+                  />
+                  <button
+                    className="btn btn-sm btn-primary"
+                    onClick={handleSaveName}
+                  >
+                    Speichern
+                  </button>
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => {
+                      setEditedName(series.name)
+                      setIsEditingName(false)
+                    }}
+                  >
+                    Abbrechen
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-2xl">{series.name}</h3>
+                  <button
+                    className="btn btn-ghost btn-circle btn-xs"
+                    onClick={() => setIsEditingName(true)}
+                    aria-label="Namen bearbeiten"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-3 mt-2 text-sm text-base-content/60">
                 <span>{booksInSeries?.length || 0} {booksInSeries?.length === 1 ? 'Buch' : 'Bücher'}</span>
                 {series.overallRating && series.overallRating > 0 && (
@@ -190,9 +243,6 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
             >
               <Plus className="w-4 h-4 mr-2" />
               Buch hinzufügen
-            </button>
-            <button className="btn" onClick={onClose}>
-              Schließen
             </button>
           </div>
         </div>
