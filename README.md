@@ -24,7 +24,6 @@ pnpm dev
 Build for production
 pnpm build
 
-text
 
 Open [http://localhost:3000](http://localhost:3000)
 
@@ -51,9 +50,6 @@ simplebib/
 │ └── imageUtils.ts # Image compression
 
 └── public/ # Static assets
-
-text
-
 ## License
 
 MIT
