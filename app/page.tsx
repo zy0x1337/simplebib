@@ -10,10 +10,9 @@ import { BookCard } from '@/components/BookCard'
 import { SeriesCard } from '@/components/SeriesCard'
 import { AddBookButton } from '@/components/AddBookButton'
 import { AddSeriesModal } from '@/components/AddSeriesModal'
-import { BookPlus, Library, Grid3x3, List } from 'lucide-react'
+import { BookPlus, Library } from 'lucide-react'
 
 export default function HomePage() {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [activeTab, setActiveTab] = useState<'books' | 'series'>('books')
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false)
   const [sortedSeries, setSortedSeries] = useState<Series[]>([])
@@ -118,34 +117,11 @@ export default function HomePage() {
           </a>
         </div>
 
-        {activeTab === 'books' && standaloneBooks && standaloneBooks.length > 0 && (
-          <div className="flex justify-end gap-2 mb-6">
-            <button
-              className={`btn btn-sm ${viewMode === 'grid' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setViewMode('grid')}
-            >
-              <Grid3x3 className="w-4 h-4" />
-            </button>
-            <button
-              className={`btn btn-sm ${viewMode === 'list' ? 'btn-primary' : 'btn-ghost'}`}
-              onClick={() => setViewMode('list')}
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
         {activeTab === 'books' ? (
           standaloneBooks && standaloneBooks.length > 0 ? (
-            <div
-              className={
-                viewMode === 'grid'
-                  ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
-                  : 'flex flex-col gap-4'
-              }
-            >
+            <div className="flex flex-col gap-4">
               {standaloneBooks.map((book) => (
-                <BookCard key={book.id} book={book} viewMode={viewMode} />
+                <BookCard key={book.id} book={book} viewMode="list" />
               ))}
             </div>
           ) : (

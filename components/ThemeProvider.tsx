@@ -1,8 +1,3 @@
-// 🎯 PWA-Pattern: Client-Side Theme Management
-// ✅ TypeScript Strict Mode
-// ⚡ Performance-Critical: LocalStorage Cache
-// 📱 App-like UX: Seamless Theme Switching
-
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -43,7 +38,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme, mounted])
 
   const toggleTheme = async () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light'
+    const newTheme: Theme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
     
     // Save to IndexedDB
@@ -55,7 +50,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Prevent Flash of Unstyled Content
   if (!mounted) {
-    return <div className="bg-base-100 min-h-screen">{children}</div>
+    return <>{children}</>
   }
 
   return (
