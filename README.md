@@ -39,6 +39,7 @@ Open [http://localhost:3000](http://localhost:3000)
 ## Project Structure
 
 simplebib/
+
 ├── app/ # Next.js pages
 
 ├── components/ # React components
