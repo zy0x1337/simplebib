@@ -1,6 +1,6 @@
 # 📚 SimpleBib
 
-A simple, offline-first book tracker built with Next.js and TypeScript. Track your reading progress, organize books into series, and search via Google Books API - all without a backend.
+A simple, offline-first book tracker built with Next.js and TypeScript. Track and update your reading status, organize books into series, and search via Google Books API - all without a backend.
 
 ## Features
 
