@@ -40,10 +40,15 @@ Open [http://localhost:3000](http://localhost:3000)
 
 simplebib/
 ├── app/ # Next.js pages
+
 ├── components/ # React components
+
 ├── lib/
+
 │ ├── db.ts # Database schema
+
 │ └── imageUtils.ts # Image compression
+
 └── public/ # Static assets
 
 text
