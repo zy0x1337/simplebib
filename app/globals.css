@@ -1,101 +1,65 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark;
+}
 
 @layer base {
-  /* Smooth Scrolling */
   html {
     scroll-behavior: smooth;
   }
-  
-  /* Prevent iOS Zoom on Input Focus */
-  input, select, textarea {
+
+  body {
+    min-height: 100dvh;
+  }
+
+  input,
+  select,
+  textarea {
     font-size: 16px;
   }
-  
-  /* Hide Scrollbar but keep functionality */
+
   ::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     background: oklch(var(--bc) / 0.2);
     border-radius: 4px;
   }
-  
-  /* Paper texture background for light theme */
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--bc) / 0.3);
+  }
+
   [data-theme="light"] body {
-    background-image: 
+    background-image:
       url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E"),
       radial-gradient(circle at 1px 1px, oklch(var(--bc) / 0.06) 1px, transparent 0);
     background-size: 200px 200px, 24px 24px;
   }
-  
-  /* Subtle dot pattern for dark theme */
+
   [data-theme="dark"] body {
-    background-image: 
+    background-image:
       radial-gradient(circle at 1px 1px, oklch(var(--bc) / 0.08) 1px, transparent 0);
     background-size: 20px 20px;
   }
-}
 
-@layer components {
-  /* Card Component für Book Items */
-  .book-card {
-    @apply card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 ease-out;
-    animation: book-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    opacity: 0;
+  @keyframes book-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  
-  .book-card:hover {
-    transform: translateY(-4px);
-  }
-  
-  /* Rating Stars */
-  .rating-star {
-    @apply cursor-pointer text-warning transition-all duration-200 hover:scale-110;
-  }
-  
-  /* Display font for headings */
-  .font-display {
-    font-family: var(--font-display), serif;
-  }
-  
-  /* Body font - use system sans-serif as fallback */
-  .font-body {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  }
-  
-  /* Staggered animation delays for lists */
-  .stagger-1 { animation-delay: 0.05s; }
-  .stagger-2 { animation-delay: 0.1s; }
-  .stagger-3 { animation-delay: 0.15s; }
-  .stagger-4 { animation-delay: 0.2s; }
-  .stagger-5 { animation-delay: 0.25s; }
-  .stagger-6 { animation-delay: 0.3s; }
-  .stagger-7 { animation-delay: 0.35s; }
-  .stagger-8 { animation-delay: 0.4s; }
-  
-  /* Stagger animation wrapper */
-  .stagger-animation {
-    animation: book-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    opacity: 0;
-  }
-  
-  /* Modal animations */
-  .modal-backdrop {
-    @apply transition-opacity duration-300;
-  }
-  
-  .modal-box {
-    @apply transition-transform duration-300 ease-out;
-    animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-  
+
   @keyframes modalSlideIn {
     from {
       opacity: 0;
@@ -106,36 +70,102 @@
       transform: translateY(0) scale(1);
     }
   }
-  
-  /* Button hover effects */
-  .btn {
-    @apply transition-all duration-200;
-  }
-  
-  .btn:hover {
-    transform: translateY(-1px);
-  }
-  
-  /* Tab styling */
-  .tabs-boxed .tab {
-    @apply transition-all duration-200;
-  }
-  
-  .tabs-boxed .tab-active {
-    @apply shadow-sm;
-  }
 }
 
-@layer utilities {
-  /* Text gradient utility */
-  .text-gradient {
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  
-  /* Reading progress bar */
-  .reading-progress {
-    @apply h-1 rounded-full bg-gradient-to-r from-primary via-secondary to-accent;
-  }
+@utility book-card {
+  @apply card bg-base-100 shadow-md transition-all duration-300 ease-out;
+  animation: book-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+@utility rating-star {
+  @apply cursor-pointer text-warning transition-transform duration-200;
+}
+
+@utility font-display {
+  font-family: var(--font-display), serif;
+}
+
+@utility font-body {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@utility stagger-1 {
+  animation-delay: 0.05s;
+}
+
+@utility stagger-2 {
+  animation-delay: 0.1s;
+}
+
+@utility stagger-3 {
+  animation-delay: 0.15s;
+}
+
+@utility stagger-4 {
+  animation-delay: 0.2s;
+}
+
+@utility stagger-5 {
+  animation-delay: 0.25s;
+}
+
+@utility stagger-6 {
+  animation-delay: 0.3s;
+}
+
+@utility stagger-7 {
+  animation-delay: 0.35s;
+}
+
+@utility stagger-8 {
+  animation-delay: 0.4s;
+}
+
+@utility stagger-animation {
+  animation: book-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  opacity: 0;
+}
+
+@utility modal-backdrop {
+  @apply transition-opacity duration-300;
+}
+
+@utility modal-box-animated {
+  @apply transition-transform duration-300 ease-out;
+  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@utility text-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility reading-progress {
+  @apply h-1 rounded-full bg-gradient-to-r from-primary via-secondary to-accent;
+}
+
+.book-card:hover {
+  transform: translateY(-4px);
+}
+
+.rating-star:hover {
+  transform: scale(1.1);
+}
+
+.btn {
+  @apply transition-all duration-200;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.tabs-boxed .tab {
+  @apply transition-all duration-200;
+}
+
+.tabs-boxed .tab-active {
+  @apply shadow-sm;
 }
