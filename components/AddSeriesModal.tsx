@@ -1,6 +1,6 @@
-// 🎯 PWA-Pattern: Add Series Modal
-// ✅ TypeScript Strict Mode
-// 📱 Einfache Serie-Erstellung
+// PWA-Pattern: Add Series Modal
+// TypeScript Strict Mode
+// Einfache Serie-Erstellung
 
 'use client'
 

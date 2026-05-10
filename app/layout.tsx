@@ -1,7 +1,7 @@
-// 🎯 PWA-Pattern: Root Layout mit Theme & Metadata
-// ✅ Next.js 15 kompatibel (viewport getrennt)
-// ⚡ Performance-Critical: Minimal CSS
-// 📱 App-like UX: Native Feel
+// PWA-Pattern: Root Layout mit Theme & Metadata
+// Next.js 15 kompatibel (viewport getrennt)
+// Performance-Critical: Minimal CSS
+// App-like UX: Native Feel
 
 import type { Metadata, Viewport } from 'next'
 import { Instrument_Serif } from 'next/font/google'

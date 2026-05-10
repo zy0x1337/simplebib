@@ -1,4 +1,4 @@
-// 🎯 PWA-Pattern: Add Book Trigger mit Modal
+// PWA-Pattern: Add Book Trigger mit Modal
 
 'use client'
 

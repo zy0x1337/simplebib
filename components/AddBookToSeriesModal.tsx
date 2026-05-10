@@ -1,6 +1,6 @@
-// 🎯 PWA-Pattern: Add existing book to series
-// ✅ TypeScript Strict Mode
-// 📱 Select from library
+// PWA-Pattern: Add existing book to series
+// TypeScript Strict Mode
+// Select from library
 
 'use client'
 
