@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss'
+import daisyui from 'daisyui'
 
-const config: Config = {
+const config = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -47,33 +48,27 @@ const config: Config = {
       },
     },
   },
-  plugins: [require('daisyui')],
+  plugins: [daisyui],
   daisyui: {
     themes: [
       {
         light: {
-          ...require('daisyui/src/theming/themes')['light'],
-          'primary': '#5d7a5d',           // Deep sage green
-          'primary-focus': '#4a634a',     
-          'primary-content': '#faf8f5',   
-          
-          'secondary': '#b8956e',         // Warm ochre/gold
+          'primary': '#5d7a5d',
+          'primary-focus': '#4a634a',
+          'primary-content': '#faf8f5',
+          'secondary': '#b8956e',
           'secondary-focus': '#9c7d5a',
           'secondary-content': '#ffffff',
-          
-          'accent': '#7a9c9c',            // Muted teal
+          'accent': '#7a9c9c',
           'accent-focus': '#5f8282',
           'accent-content': '#ffffff',
-          
           'neutral': '#4a4a4a',
           'neutral-focus': '#333333',
           'neutral-content': '#faf8f5',
-          
-          'base-100': '#faf8f5',          // Antique cream (warm paper)
-          'base-200': '#f2efe9',          // Slightly darker cream
-          'base-300': '#e6e2d8',          // Warm beige
-          'base-content': '#2b2b2b',      // Soft charcoal
-          
+          'base-100': '#faf8f5',
+          'base-200': '#f2efe9',
+          'base-300': '#e6e2d8',
+          'base-content': '#2b2b2b',
           'info': '#6b8c9c',
           'success': '#5d7a5d',
           'warning': '#b8956e',
@@ -82,28 +77,22 @@ const config: Config = {
       },
       {
         dark: {
-          ...require('daisyui/src/theming/themes')['dark'],
-          'primary': '#7a9c7a',           // Muted sage
+          'primary': '#7a9c7a',
           'primary-focus': '#5d7a5d',
           'primary-content': '#1a1a1a',
-          
-          'secondary': '#c9a97a',         // Warm gold
+          'secondary': '#c9a97a',
           'secondary-focus': '#b8956e',
           'secondary-content': '#1a1a1a',
-          
           'accent': '#7a9c9c',
           'accent-focus': '#5f8282',
           'accent-content': '#e8e8e8',
-          
           'neutral': '#3a3a3a',
           'neutral-focus': '#252525',
           'neutral-content': '#d7dae0',
-          
-          'base-100': '#1a1a18',          // Warm near-black (ink)
-          'base-200': '#252522',          // Warm charcoal
-          'base-300': '#30302c',          // Medium warm gray
-          'base-content': '#e8e6e0',      // Warm off-white
-          
+          'base-100': '#1a1a18',
+          'base-200': '#252522',
+          'base-300': '#30302c',
+          'base-content': '#e8e6e0',
           'info': '#6b8c9c',
           'success': '#7a9c7a',
           'warning': '#c9a97a',
@@ -112,6 +101,6 @@ const config: Config = {
       },
     ],
   },
-}
+} satisfies Config & { daisyui: object }
 
 export default config
