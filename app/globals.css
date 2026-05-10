@@ -213,5 +213,5 @@
 }
 
 @utility yuno-input {
-  @apply input input-bordered w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30;
+  @apply input w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30;
 }
