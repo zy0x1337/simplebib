@@ -12,7 +12,7 @@ export function Header() {
         <div className="flex items-center gap-2 ml-4">
           <Library className="w-6 h-6 text-primary" />
           <h1 className="text-2xl font-display font-bold text-base-content">
-            SimpleBib
+            YunoBib
           </h1>
         </div>
       </div>

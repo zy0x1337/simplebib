@@ -13,6 +13,13 @@ const config = {
         display: ['var(--font-display)', 'serif'],
         body: ['var(--font-body)', 'sans-serif'],
       },
+      colors: {
+        paper: '#f5f2eb',
+        ink: '#1a1a18',
+        sage: '#6b7a6b',
+        clay: '#b8956e',
+        slate: '#4a5568',
+      },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
         'slide-up': 'slideUp 0.4s ease-out forwards',
@@ -73,6 +80,7 @@ const config = {
           'success': '#5d7a5d',
           'warning': '#b8956e',
           'error': '#9c5d5d',
+          '--font-display': 'Instrument Serif, serif',
         },
       },
       {
@@ -97,6 +105,7 @@ const config = {
           'success': '#7a9c7a',
           'warning': '#c9a97a',
           'error': '#9c6b6b',
+          '--font-display': 'Instrument Serif, serif',
         },
       },
     ],

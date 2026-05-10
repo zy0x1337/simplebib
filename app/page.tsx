@@ -55,10 +55,10 @@ export default function HomePage() {
               <BookPlus className="w-24 h-24 mx-auto mb-6 text-base-content/30" />
             </div>
             <h2 className="text-3xl font-display font-bold mb-3 text-base-content">
-              Willkommen in deiner Bibliothek
+              Willkommen in YunoBib
             </h2>
             <p className="text-base-content/70 mb-8 text-lg">
-              Beginne deine Reise – füge das erste Buch hinzu oder erstelle eine Buchreihe!
+              Dein Premium Buchjournal 2026 – füge das erste Buch hinzu oder erstelle eine Buchreihe!
             </p>
 
             <div className="mb-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>

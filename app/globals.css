@@ -10,6 +10,8 @@
 
   body {
     min-height: 100dvh;
+    font-feature-settings: "liga" 1, "kern" 1;
+    text-rendering: optimizeLegibility;
   }
 
   input,
@@ -70,12 +72,46 @@
       transform: translateY(0) scale(1);
     }
   }
+
+  @keyframes yunoFadeIn {
+    from {
+      opacity: 0;
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  @keyframes yunoFloat {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
 }
 
-@utility book-card {
-  @apply card bg-base-100 shadow-md transition-all duration-300 ease-out;
-  animation: book-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+@utility yuno-title {
+  @apply font-display font-bold tracking-tight;
+  background: linear-gradient(135deg, oklch(var(--pc)) 0%, oklch(var(--sc)) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@utility yuno-card {
+  @apply card bg-base-100 shadow-lg transition-all duration-500 ease-out;
+  animation: book-reveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   opacity: 0;
+  border: 1px solid oklch(var(--bc) / 0.08);
+}
+
+.yuno-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 40px oklch(var(--bc) / 0.15);
 }
 
 @utility rating-star {
@@ -146,26 +182,36 @@
   @apply h-1 rounded-full bg-gradient-to-r from-primary via-secondary to-accent;
 }
 
-.book-card:hover {
-  transform: translateY(-4px);
+.yuno-card:hover {
+  transform: translateY(-6px) scale(1.02);
 }
 
 .rating-star:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .btn {
-  @apply transition-all duration-200;
+  @apply transition-all duration-300;
 }
 
 .btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px oklch(var(--bc) / 0.12);
 }
 
 .tabs-boxed .tab {
-  @apply transition-all duration-200;
+  @apply transition-all duration-300;
 }
 
 .tabs-boxed .tab-active {
   @apply shadow-sm;
+  background-color: oklch(var(--p) / 0.1);
+}
+
+@utility yuno-button {
+  @apply btn transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
+}
+
+@utility yuno-input {
+  @apply input input-bordered w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30;
 }
