@@ -4,7 +4,7 @@
 // 📱 App-like UX: Native Feel
 
 import type { Metadata, Viewport } from 'next'
-import { Instrument_Serif, General_Sans } from 'next/font/google'
+import { Instrument_Serif } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 
@@ -12,12 +12,6 @@ const instrumentSerif = Instrument_Serif({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-display',
-})
-
-const generalSans = General_Sans({ 
-  weight: ['400', '500', '600'],
-  subsets: ['latin'],
-  variable: '--font-body',
 })
 
 export const metadata: Metadata = {
@@ -44,12 +38,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="de" suppressHydrationWarning className={`${instrumentSerif.variable} ${generalSans.variable}`}>
+    <html lang="de" suppressHydrationWarning className={`${instrumentSerif.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="theme-color" content="#8fac8e" />
       </head>
-      <body className="font-body antialiased">
+      <body className="antialiased">
         <ThemeProvider>
           {children}
         </ThemeProvider>
