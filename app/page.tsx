@@ -55,7 +55,7 @@ export default function HomePage() {
               <BookPlus className="w-24 h-24 mx-auto mb-6 text-base-content/30" />
             </div>
             <h2 className="text-3xl font-display font-bold mb-3 text-base-content">
-              Willkommen in deiner Bibliothek
+              Willkommen in deiner Bibliothek xd
             </h2>
             <p className="text-base-content/70 mb-8 text-lg">
               Beginne deine Reise – füge das erste Buch hinzu oder erstelle eine Buchreihe!
