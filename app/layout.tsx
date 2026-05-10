@@ -15,13 +15,13 @@ const instrumentSerif = Instrument_Serif({
 })
 
 export const metadata: Metadata = {
-  title: 'SimpleBib — Dein persönliches Lesejournal',
-  description: 'Ein wunderschönes Offline-First Tool zum Verwalten deiner Bücher und Buchreihen',
+  title: 'YunoBib — Premium Buchjournal 2026',
+  description: 'Ein minimalistisches Offline-First Tool zum Verwalten deiner Bücher und Buchreihen',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'SimpleBib',
+    title: 'YunoBib',
   },
 }
 
