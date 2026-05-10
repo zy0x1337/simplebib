@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series } from '@/lib/db'
-import { BookOpen, ChevronRight, Star, StarHalf, Star as StarEmpty } from 'lucide-react'
+import { BookOpen, ChevronRight, Library as LibraryIcon, Star, StarHalf, Star as StarEmpty } from 'lucide-react'
 import { SeriesDetailsModal } from './SeriesDetailsModal'
 
 interface SeriesCardProps {
@@ -47,43 +47,75 @@ export function SeriesCard({ series }: SeriesCardProps) {
   return (
     <>
       <div
-        className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer"
+        className="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group"
         onClick={() => setIsModalOpen(true)}
       >
         <div className="card-body">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h2 className="card-title text-lg mb-2">{series.name}</h2>
-              
-              {/* Bücher Anzahl */}
-              <div className="flex items-center gap-2 text-sm text-base-content/70 mb-2">
-                <BookOpen className="w-4 h-4" />
-                <span>{totalBooks} {totalBooks === 1 ? 'Buch' : 'Bücher'}</span>
+          {/* Header with icon and chevron */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <LibraryIcon className="w-6 h-6 text-primary" />
               </div>
-
-              {/* Fortschritt */}
-              {totalBooks > 0 && (
-                <div className="text-sm text-base-content/70 mb-2">
-                  <span className="font-semibold text-success">{finishedBooks}</span> gelesen
-                  {readingBooks > 0 && (
-                    <>, <span className="font-semibold text-info">{readingBooks}</span> in Bearbeitung</>
-                  )}
+              <div>
+                <h2 className="card-title text-xl font-display font-semibold text-base-content">
+                  {series.name}
+                </h2>
+                <div className="flex items-center gap-2 text-sm text-base-content/60 mt-1">
+                  <BookOpen className="w-4 h-4" />
+                  <span>{totalBooks} {totalBooks === 1 ? 'Buch' : 'Bücher'} in dieser Reihe</span>
                 </div>
-              )}
-
-              {/* Bewertung */}
-              {averageRating > 0 && (
-                <div className="flex items-center gap-2">
-                  {renderStars(averageRating)}
-                  <span className="text-sm text-base-content/70">
-                    {averageRating.toFixed(1)}
-                  </span>
-                </div>
-              )}
+              </div>
             </div>
-            
-            <ChevronRight className="w-5 h-5 text-base-content/40" />
+            <ChevronRight className="w-5 h-5 text-base-content/40 group-hover:text-base-content transition-colors" />
           </div>
+
+          {/* Progress section */}
+          {totalBooks > 0 && (
+            <div className="bg-base-200 rounded-lg p-3 mt-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-base-content/70">Dein Fortschritt</span>
+                <span className="text-sm font-semibold text-primary">
+                  {finishedBooks}/{totalBooks}
+                </span>
+              </div>
+              <progress 
+                className="progress progress-primary w-full h-2" 
+                value={finishedBooks} 
+                max={totalBooks}
+              ></progress>
+              
+              <div className="flex gap-4 mt-3 text-xs text-base-content/60">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-success"></span>
+                  {finishedBooks} gelesen
+                </span>
+                {readingBooks > 0 && (
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-info"></span>
+                    {readingBooks} in Bearbeitung
+                  </span>
+                )}
+                {totalBooks - finishedBooks - readingBooks > 0 && (
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-base-300"></span>
+                    {totalBooks - finishedBooks - readingBooks} offen
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Rating */}
+          {averageRating > 0 && (
+            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-base-200">
+              <span className="text-sm text-base-content/70">Ø Bewertung:</span>
+              {renderStars(averageRating)}
+              <span className="text-sm font-medium text-base-content">
+                {averageRating.toFixed(1)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

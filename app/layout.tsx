@@ -4,15 +4,25 @@
 // 📱 App-like UX: Native Feel
 
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Instrument_Serif, General_Sans } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 
-const inter = Inter({ subsets: ['latin'] })
+const instrumentSerif = Instrument_Serif({ 
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-display',
+})
+
+const generalSans = General_Sans({ 
+  weight: ['400', '500', '600'],
+  subsets: ['latin'],
+  variable: '--font-body',
+})
 
 export const metadata: Metadata = {
-  title: 'SimpleBib - Dein Buch-Tracker',
-  description: 'Einfacher Tracker für deine gelesenen Bücher und Buchreihen',
+  title: 'SimpleBib — Dein persönliches Lesejournal',
+  description: 'Ein wunderschönes Offline-First Tool zum Verwalten deiner Bücher und Buchreihen',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -25,7 +35,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#4f46e5',
+  themeColor: '#8fac8e',
 }
 
 export default function RootLayout({
@@ -34,12 +44,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="de" suppressHydrationWarning>
+    <html lang="de" suppressHydrationWarning className={`${instrumentSerif.variable} ${generalSans.variable}`}>
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#4f46e5" />
+        <meta name="theme-color" content="#8fac8e" />
       </head>
-      <body className={inter.className}>
+      <body className="font-body antialiased">
         <ThemeProvider>
           {children}
         </ThemeProvider>
