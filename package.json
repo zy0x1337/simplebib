@@ -10,22 +10,22 @@
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
-    "dexie": "^4.0.8",
-    "dexie-react-hooks": "^1.1.7",
-    "lucide-react": "^0.445.0",
-    "next": "15.0.2",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "react-qr-barcode-scanner": "^2.1.15"
+    "dexie": "^4.4.2",
+    "dexie-react-hooks": "^4.4.0",
+    "lucide-react": "^1.14.0",
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-qr-barcode-scanner": "^2.1.25"
   },
   "devDependencies": {
-    "@types/node": "^22.7.5",
-    "@types/react": "^18.3.11",
-    "@types/react-dom": "^18.3.0",
-    "autoprefixer": "^10.4.20",
-    "daisyui": "^4.12.10",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^3.4.13",
-    "typescript": "^5.6.2"
+    "@types/node": "^25.6.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.0",
+    "daisyui": "^5.5.19",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3"
   }
 }
