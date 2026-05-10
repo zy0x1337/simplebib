@@ -1,10 +1,32 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, BookOpen } from 'lucide-react'
+import { Search, BookOpen, AlertCircle } from 'lucide-react'
 
 interface BookSearchProps {
   onBookSelect: (book: { title: string; authors: string; coverUrl: string }) => void
+}
+
+// Retry-Logik für 503/429 Fehler
+async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+  for (let i = 0; i < maxRetries; i++) {
+    const res = await fetch(url)
+    
+    // Bei 503 oder 429: warten und retry
+    if (res.status === 503 || res.status === 429) {
+      const waitTime = Math.pow(2, i) * 1000 // Exponential Backoff: 2s, 4s, 8s
+      if (i < maxRetries - 1) {
+        console.log(`API antwortet mit ${res.status}. Warte ${waitTime}ms vor Retry...`)
+        await new Promise(resolve => setTimeout(resolve, waitTime))
+        continue
+      }
+    }
+    
+    return res
+  }
+  
+  // Fallback nach allen Retries
+  return fetch(url)
 }
 
 export function BookSearch({ onBookSelect }: BookSearchProps) {
@@ -12,6 +34,7 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [showResults, setShowResults] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,6 +46,7 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
     setIsLoading(true)
     setSearchResults([])
     setShowResults(false)
+    setErrorMessage(null)
 
     try {
       // Prüfen ob es eine ISBN ist (nur Zahlen und optional Bindestriche)
@@ -39,11 +63,30 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
         url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=15`
       }
 
-      const res = await fetch(url)
+      console.log('Suche:', url)
+      
+      const res = await fetchWithRetry(url)
+      
+      // Detaillierte Fehlerbehandlung
+      if (!res.ok) {
+        console.error('API Error:', res.status, res.statusText)
+        
+        if (res.status === 503) {
+          throw new Error('Google Books API ist vorübergehend nicht verfügbar (503). Bitte versuche es in einigen Minuten erneut.')
+        } else if (res.status === 429) {
+          throw new Error('Zu viele Anfragen (Rate Limit). Bitte warte einen Moment und versuche es erneut.')
+        } else if (res.status === 400) {
+          throw new Error('Ungültige Suchanfrage. Überprüfe deine Eingabe.')
+        } else {
+          throw new Error(`API-Fehler (${res.status}): ${res.statusText}`)
+        }
+      }
+
       const data = await res.json()
+      console.log('API Response:', data)
 
       if (!data.items || data.items.length === 0) {
-        alert('Keine Bücher gefunden. Versuche es mit einem anderen Suchbegriff.')
+        setErrorMessage('Keine Bücher gefunden. Versuche es mit einem anderen Suchbegriff.')
         return
       }
 
@@ -73,7 +116,9 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
         setShowResults(true)
       }
     } catch (error) {
-      alert('Fehler bei der Suche. Bitte versuche es erneut.')
+      console.error('Suchfehler:', error)
+      const errorMsg = error instanceof Error ? error.message : 'Fehler bei der Suche. Bitte versuche es erneut.'
+      setErrorMessage(errorMsg)
     } finally {
       setIsLoading(false)
     }
@@ -122,6 +167,13 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
           </div>
         </div>
       </form>
+
+      {errorMessage && (
+        <div className="mb-4 alert alert-error text-error-content">
+          <AlertCircle className="w-5 h-5" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
 
       {showResults && searchResults.length > 0 && (
         <div className="mt-4 card bg-base-100 shadow-xl">
