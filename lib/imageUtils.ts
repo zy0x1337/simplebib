@@ -1,7 +1,7 @@
-// 🎯 PWA-Pattern: Client-Side Image Compression
-// ✅ Browser-native Canvas API
-// ⚡ Performance-Critical: WebP Format, 80% Quality
-// 📱 Storage-Optimized: ~80KB pro Cover
+// PWA-Pattern: Client-Side Image Compression
+// Browser-native Canvas API
+// Performance-Critical: WebP Format, 80% Quality
+// Storage-Optimized: ~80KB pro Cover
 
 export async function compressImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {

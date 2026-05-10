@@ -1,7 +1,7 @@
-// 🎯 PWA-Pattern: Next.js PWA Integration
-// ✅ TypeScript Native Support
-// ⚡ Performance-Critical: Optimized Build
-// 📱 App-like UX: Standalone PWA
+// PWA-Pattern: Next.js PWA Integration
+// TypeScript Native Support
+// Performance-Critical: Optimized Build
+// App-like UX: Standalone PWA
 
 import type { NextConfig } from 'next'
 import withPWAInit from '@ducanh2912/next-pwa'
