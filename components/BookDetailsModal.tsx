@@ -27,18 +27,15 @@ const STATUS_CLS: Record<string, string> = {
 
 function Spinner() {
   return (
-    <span
-      style={{
-        display: 'inline-block',
-        width: '0.875rem', height: '0.875rem',
-        borderRadius: '50%',
-        border: '2px solid oklch(from var(--color-text-inverse) l c h / 0.3)',
-        borderTopColor: 'var(--color-text-inverse)',
-        animation: 'spin 0.7s linear infinite',
-        flexShrink: 0,
-      }}
-      aria-hidden="true"
-    />
+    <span style={{
+      display: 'inline-block',
+      width: '0.875rem', height: '0.875rem',
+      borderRadius: '50%',
+      border: '2px solid oklch(from var(--color-text-inverse) l c h / 0.3)',
+      borderTopColor: 'var(--color-text-inverse)',
+      animation: 'spin 0.7s linear infinite',
+      flexShrink: 0,
+    }} aria-hidden="true" />
   )
 }
 
@@ -47,11 +44,9 @@ function StarRatingView({ rating }: { rating: number }) {
     <div style={{ display: 'flex', gap: '0.2rem' }}>
       {Array.from({ length: 5 }, (_, i) => {
         const n = i + 1
-        if (rating >= n)
-          return <Star key={n} style={{ width: '1.1rem', height: '1.1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
-        if (rating >= n - 0.5)
-          return <StarHalf key={n} style={{ width: '1.1rem', height: '1.1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
-        return <Star key={n} style={{ width: '1.1rem', height: '1.1rem', color: 'var(--color-border)' }} />
+        if (rating >= n)       return <Star     key={n} style={{ width: '1.1rem', height: '1.1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        if (rating >= n - 0.5) return <StarHalf key={n} style={{ width: '1.1rem', height: '1.1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        return                        <Star     key={n} style={{ width: '1.1rem', height: '1.1rem', color: 'var(--color-border)' }} />
       })}
     </div>
   )
@@ -149,11 +144,20 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
 
   if (!isOpen) return null
 
+  /* ── Shared label style ── */
+  const labelStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-body)',
+    fontSize: 'var(--text-xs)',
+    fontWeight: 600,
+    letterSpacing: 'var(--tracking-widest)',
+    textTransform: 'uppercase',
+    color: 'var(--color-text-faint)',
+    marginBottom: 'var(--space-2)',
+    display: 'block',
+  }
+
   return (
-    <div
-      className="modal-overlay anim-fade-in"
-      onClick={onClose}
-    >
+    <div className="modal-overlay anim-fade-in" onClick={onClose}>
       <div
         className="modal-box anim-modal-in"
         style={{ maxWidth: '480px' }}
@@ -162,107 +166,79 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
         aria-modal="true"
         aria-labelledby="book-details-title"
       >
-        {/* Mobile handle */}
-        <div className="sm:hidden" style={{ display: 'flex', justifyContent: 'center', paddingBottom: 'var(--space-3)' }}>
-          <div style={{ width: '2.5rem', height: '0.25rem', borderRadius: 'var(--radius-full)', background: 'var(--color-border)' }} />
+        {/* ── Handle ── */}
+        <div className="modal-box__handle">
+          <div className="modal-box__handle-bar" />
         </div>
 
-        {/* ── HERO: Cover + Info ────────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: 'var(--space-4)', paddingBottom: 'var(--space-4)' }}>
+        {/* ─────────────────────────────────────────────
+             HEADER — sticky, always visible
+        ───────────────────────────────────────────── */}
+        <div className="modal-box__header">
+          <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
 
-          {/* Cover */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{
-              width: '5rem',
-              height: '7.5rem',
-              borderRadius: 'var(--radius-md)',
-              overflow: 'hidden',
-              background: 'var(--color-surface-2)',
-              boxShadow: 'var(--shadow-book)',
-              border: '1px solid var(--color-border)',
-            }}>
-              {coverPreview ? (
-                <img
-                  src={coverPreview}
-                  alt={book.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <BookOpen style={{ width: '1.5rem', height: '1.5rem', color: 'var(--color-text-faint)' }} />
-                </div>
+            {/* Cover */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{
+                width: '4.5rem',
+                height: '6.75rem',
+                borderRadius: 'var(--radius-md)',
+                overflow: 'hidden',
+                background: 'var(--color-surface-2)',
+                boxShadow: 'var(--shadow-book)',
+                border: '1px solid var(--color-border)',
+              }}>
+                {coverPreview ? (
+                  <img src={coverPreview} alt={book.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BookOpen style={{ width: '1.25rem', height: '1.25rem', color: 'var(--color-text-faint)' }} />
+                  </div>
+                )}
+              </div>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingCover}
+                  aria-label="Cover ändern"
+                  style={{
+                    position: 'absolute', inset: 0,
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'oklch(0.05 0.01 60 / 0.7)',
+                    border: 'none', cursor: 'pointer', color: 'white',
+                  }}
+                >
+                  <Upload style={{ width: '1.25rem', height: '1.25rem' }} />
+                </button>
               )}
+              <input ref={fileInputRef} type="file" accept="image/*"
+                style={{ display: 'none' }} onChange={handleFileUpload} />
             </div>
 
-            {/* Cover upload overlay */}
-            {isEditing && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingCover}
-                aria-label="Cover ändern"
-                style={{
-                  position: 'absolute', inset: 0,
-                  borderRadius: 'var(--radius-md)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'oklch(0.05 0.01 60 / 0.6)',
-                  border: 'none', cursor: 'pointer',
-                  color: 'white',
-                  opacity: 0,
-                  transition: 'opacity var(--transition)',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0' }}
-              >
-                <Upload style={{ width: '1.25rem', height: '1.25rem' }} />
-              </button>
-            )}
-            <input ref={fileInputRef} type="file" accept="image/*"
-              style={{ display: 'none' }} onChange={handleFileUpload} disabled={isUploadingCover} />
-          </div>
-
-          {/* Info block */}
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', justifyContent: 'center' }}>
-            {isEditing ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <input
-                  className="input"
-                  value={editedTitle}
-                  onChange={e => setEditedTitle(e.target.value)}
-                  placeholder="Titel"
-                  disabled={isSaving}
-                  style={{ fontWeight: 600 }}
-                />
-                <input
-                  className="input"
-                  value={editedAuthor}
-                  onChange={e => setEditedAuthor(e.target.value)}
-                  placeholder="Autor"
-                  disabled={isSaving}
-                />
-                <input
-                  className="input"
-                  type="url"
-                  value={editedCoverUrl}
-                  onChange={e => {
-                    setEditedCoverUrl(e.target.value)
-                    if (e.target.value) {
-                      setCoverPreview(e.target.value)
-                      setEditedCoverType('url')
-                    } else {
-                      setEditedCoverType('none')
-                    }
-                  }}
-                  placeholder="Cover-URL (optional)"
-                  disabled={isSaving}
-                  style={{ fontSize: 'var(--text-xs)' }}
-                />
-              </div>
-            ) : (
-              <>
-                <h2
-                  id="book-details-title"
-                  style={{
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {isEditing ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <input className="input" value={editedTitle} onChange={e => setEditedTitle(e.target.value)}
+                    placeholder="Titel" disabled={isSaving} style={{ fontWeight: 600 }} />
+                  <input className="input" value={editedAuthor} onChange={e => setEditedAuthor(e.target.value)}
+                    placeholder="Autor" disabled={isSaving} />
+                  <input className="input" type="url" value={editedCoverUrl}
+                    onChange={e => {
+                      setEditedCoverUrl(e.target.value)
+                      setCoverPreview(e.target.value || null)
+                      setEditedCoverType(e.target.value ? 'url' : 'none')
+                    }}
+                    placeholder="Cover-URL" disabled={isSaving}
+                    style={{ fontSize: 'var(--text-xs)' }}
+                  />
+                </div>
+              ) : (
+                <>
+                  <h2 id="book-details-title" style={{
                     fontFamily: 'var(--font-display)',
                     fontSize: 'var(--text-lg)',
                     fontStyle: 'italic',
@@ -270,234 +246,161 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                     letterSpacing: 'var(--tracking-tight)',
                     lineHeight: 'var(--leading-snug)',
                     color: 'var(--color-text)',
-                    overflow: 'hidden',
                     display: '-webkit-box',
                     WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical',
-                  }}
-                >
-                  {book.title}
-                </h2>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
-                  {book.author}
-                </p>
-                {series && (
-                  <p style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 600,
-                    letterSpacing: 'var(--tracking-widest)',
-                    textTransform: 'uppercase',
-                    color: 'var(--color-accent)',
-                    marginTop: '0.25rem',
+                    overflow: 'hidden',
                   }}>
-                    {series.name}{book.seriesPosition ? ` · Band ${book.seriesPosition}` : ''}
+                    {book.title}
+                  </h2>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>
+                    {book.author}
                   </p>
-                )}
-                <div style={{ marginTop: 'var(--space-1)' }}>
-                  <span className={STATUS_CLS[book.status]}>{STATUS_LABEL[book.status]}</span>
-                </div>
-                {(book.rating ?? 0) > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
-                    <StarRatingView rating={book.rating ?? 0} />
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                      {book.rating}/5
-                    </span>
+                  {series && (
+                    <p style={{
+                      fontSize: 'var(--text-xs)', fontWeight: 600,
+                      letterSpacing: 'var(--tracking-widest)', textTransform: 'uppercase',
+                      color: 'var(--color-accent)', marginTop: 'var(--space-1)',
+                    }}>
+                      {series.name}{book.seriesPosition ? ` · Band ${book.seriesPosition}` : ''}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
+                    <span className={STATUS_CLS[book.status]}>{STATUS_LABEL[book.status]}</span>
+                    {(book.rating ?? 0) > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <StarRatingView rating={book.rating ?? 0} />
+                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{book.rating}/5</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                </>
+              )}
+            </div>
 
-          {/* Top-right actions */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', flexShrink: 0 }}>
-            <button
-              onClick={onClose}
-              className="btn btn-icon btn-ghost"
-              aria-label="Schließen"
-            >
-              <X style={{ width: '1rem', height: '1rem' }} />
-            </button>
-            {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="btn btn-icon btn-ghost"
-                aria-label="Bearbeiten"
-                style={{ color: 'var(--color-accent)' }}
-              >
-                <Edit2 style={{ width: '1rem', height: '1rem' }} />
+            {/* Actions top-right */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', flexShrink: 0 }}>
+              <button onClick={onClose} className="btn btn-icon btn-ghost" aria-label="Schließen">
+                <X style={{ width: '1.1rem', height: '1.1rem' }} />
               </button>
-            )}
+              {!isEditing && (
+                <button onClick={() => setIsEditing(true)} className="btn btn-icon btn-ghost"
+                  aria-label="Bearbeiten" style={{ color: 'var(--color-accent)' }}>
+                  <Edit2 style={{ width: '1.1rem', height: '1.1rem' }} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ height: '1px', background: 'var(--color-divider)', marginBottom: 'var(--space-4)' }} />
+        <div className="modal-box__divider" />
 
-        {/* ── EDIT FORM ─────────────────────────────────────────────── */}
-        {isEditing && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', paddingBottom: 'var(--space-4)' }}>
+        {/* ─────────────────────────────────────────────
+             BODY — scrollable
+        ───────────────────────────────────────────── */}
+        <div className="modal-box__body">
+          {isEditing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
-            {/* Status */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <p style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: 'var(--text-xs)', fontWeight: 600,
-                letterSpacing: 'var(--tracking-widest)',
-                textTransform: 'uppercase',
-                color: 'var(--color-text-faint)',
-              }}>Status</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)' }}>
-                {STATUS_OPTIONS.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setEditedStatus(value)}
-                    disabled={isSaving}
-                    style={{
-                      padding: '0.6rem 0',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid',
-                      borderColor: editedStatus === value ? 'var(--color-accent)' : 'var(--color-border)',
-                      background: editedStatus === value ? 'var(--color-accent)' : 'var(--color-surface-2)',
-                      color: editedStatus === value ? 'var(--color-text-inverse)' : 'var(--color-text-muted)',
-                      fontSize: 'var(--text-sm)',
-                      fontWeight: editedStatus === value ? 600 : 400,
-                      cursor: 'pointer',
-                      transition: 'all var(--transition)',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
+              {/* Status */}
+              <div>
+                <span style={labelStyle}>Status</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)' }}>
+                  {STATUS_OPTIONS.map(({ value, label }) => (
+                    <button
+                      key={value} type="button"
+                      onClick={() => setEditedStatus(value)}
+                      disabled={isSaving}
+                      style={{
+                        padding: '0.75rem 0',
+                        minHeight: '48px',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid',
+                        borderColor: editedStatus === value ? 'var(--color-accent)' : 'var(--color-border)',
+                        background: editedStatus === value ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                        color: editedStatus === value ? 'var(--color-text-inverse)' : 'var(--color-text-muted)',
+                        fontSize: 'var(--text-sm)',
+                        fontWeight: editedStatus === value ? 600 : 400,
+                        cursor: 'pointer',
+                        transition: 'all var(--transition)',
+                        WebkitTapHighlightColor: 'transparent',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Star rating */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <p style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-xs)', fontWeight: 600,
-                  letterSpacing: 'var(--tracking-widest)',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-text-faint)',
-                }}>Bewertung</p>
-                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                  {editedRating > 0 ? `${editedRating} / 5` : '—'}
-                </span>
-              </div>
-              {/* Clickable stars */}
-              <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-                {Array.from({ length: 5 }, (_, i) => {
-                  const full = i + 1
-                  const half = i + 0.5
-                  const filled = editedRating >= full
-                  const halfFilled = !filled && editedRating >= half
-                  return (
-                    <div key={i} style={{ display: 'flex', position: 'relative' }}>
-                      {/* Half click zone */}
-                      <button
-                        type="button"
-                        onClick={() => setEditedRating(prev => prev === half ? 0 : half)}
-                        style={{
-                          position: 'absolute', left: 0, top: 0, bottom: 0,
-                          width: '50%', background: 'none', border: 'none',
-                          cursor: 'pointer', padding: 0, zIndex: 1,
-                        }}
-                        aria-label={`${half} Sterne`}
-                      />
-                      {/* Full click zone */}
-                      <button
-                        type="button"
-                        onClick={() => setEditedRating(prev => prev === full ? 0 : full)}
-                        style={{
-                          position: 'absolute', right: 0, top: 0, bottom: 0,
-                          width: '50%', background: 'none', border: 'none',
-                          cursor: 'pointer', padding: 0, zIndex: 1,
-                        }}
-                        aria-label={`${full} Sterne`}
-                      />
-                      {/* Star icon */}
-                      {halfFilled
-                        ? <StarHalf style={{ width: '1.75rem', height: '1.75rem', fill: 'var(--color-star)', color: 'var(--color-star)', pointerEvents: 'none' }} />
-                        : <Star style={{ width: '1.75rem', height: '1.75rem', fill: filled ? 'var(--color-star)' : 'none', color: filled ? 'var(--color-star)' : 'var(--color-border)', pointerEvents: 'none', transition: 'fill 120ms ease, color 120ms ease' }} />
-                      }
-                    </div>
-                  )
-                })}
-                {editedRating > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setEditedRating(0)}
-                    style={{
-                      marginLeft: 'var(--space-2)',
-                      fontSize: 'var(--text-xs)',
-                      color: 'var(--color-text-faint)',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: 'var(--radius-sm)',
-                    }}
-                  >
-                    zurücksetzen
-                  </button>
-                )}
-              </div>
-              {/* Range slider for fine-tuning */}
-              <input
-                type="range" min="0" max="5" step="0.5"
-                value={editedRating}
-                onChange={e => setEditedRating(parseFloat(e.target.value))}
-                className="bib-range"
-                style={{
-                  background: `linear-gradient(to right, var(--color-star) ${editedRating / 5 * 100}%, var(--color-surface-2) ${editedRating / 5 * 100}%)`,
-                }}
-              />
-            </div>
-
-            {/* Series position */}
-            {book.seriesId && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                <p style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-xs)', fontWeight: 600,
-                  letterSpacing: 'var(--tracking-widest)',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-text-faint)',
-                }}>Bandnummer</p>
-                <input
-                  type="number" min={1}
-                  value={editedPosition}
-                  onChange={e => setEditedPosition(parseInt(e.target.value) || 1)}
-                  className="input"
-                  style={{ width: '6rem' }}
-                  disabled={isSaving}
+              {/* Star rating */}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                  <span style={labelStyle}>Bewertung</span>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                    {editedRating > 0 ? `${editedRating} / 5` : '—'}
+                  </span>
+                </div>
+                {/* Star row with large touch targets */}
+                <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginBottom: 'var(--space-3)' }}>
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const full = i + 1
+                    const half = i + 0.5
+                    const filled   = editedRating >= full
+                    const halfFill = !filled && editedRating >= half
+                    return (
+                      <div key={i} style={{ position: 'relative', width: '2.75rem', height: '2.75rem' }}>
+                        {/* Half click zone */}
+                        <button type="button" onClick={() => setEditedRating(editedRating === half ? 0 : half)}
+                          aria-label={`${half} Sterne`}
+                          style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '50%', background: 'none', border: 'none', cursor: 'pointer', zIndex: 1 }} />
+                        {/* Full click zone */}
+                        <button type="button" onClick={() => setEditedRating(editedRating === full ? 0 : full)}
+                          aria-label={`${full} Sterne`}
+                          style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '50%', background: 'none', border: 'none', cursor: 'pointer', zIndex: 1 }} />
+                        {/* Icon */}
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                          {halfFill
+                            ? <StarHalf style={{ width: '2rem', height: '2rem', fill: 'var(--color-star)', color: 'var(--color-star)', transition: 'all 120ms ease' }} />
+                            : <Star    style={{ width: '2rem', height: '2rem', fill: filled ? 'var(--color-star)' : 'none', color: filled ? 'var(--color-star)' : 'var(--color-border)', transition: 'all 120ms ease' }} />
+                          }
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <input type="range" min="0" max="5" step="0.5" value={editedRating}
+                  onChange={e => setEditedRating(parseFloat(e.target.value))}
+                  className="bib-range"
+                  style={{ background: `linear-gradient(to right, var(--color-star) ${editedRating / 5 * 100}%, var(--color-surface-2) ${editedRating / 5 * 100}%)` }}
                 />
               </div>
-            )}
-          </div>
-        )}
 
-        {/* ── VIEW: Metadaten ────────────────────────────────────────────── */}
-        {!isEditing && (
-          <div style={{ paddingBottom: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-            <p style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 'var(--text-xs)', fontWeight: 600,
-              letterSpacing: 'var(--tracking-widest)',
-              textTransform: 'uppercase',
-              color: 'var(--color-text-faint)',
-            }}>
-              Hinzugefügt {new Date(book.dateAdded).toLocaleDateString('de-DE', {
-                day: 'numeric', month: 'long', year: 'numeric',
-              })}
-            </p>
-          </div>
-        )}
+              {/* Series position */}
+              {book.seriesId && (
+                <div>
+                  <span style={labelStyle}>Bandnummer</span>
+                  <input type="number" min={1} value={editedPosition}
+                    onChange={e => setEditedPosition(parseInt(e.target.value) || 1)}
+                    className="input" style={{ width: '7rem' }} disabled={isSaving} />
+                </div>
+              )}
+            </div>
+          ) : (
+            /* View mode */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+              <p style={{ ...labelStyle, marginBottom: 0 }}>
+                Hinzugefügt {new Date(book.dateAdded).toLocaleDateString('de-DE', {
+                  day: 'numeric', month: 'long', year: 'numeric',
+                })}
+              </p>
+            </div>
+          )}
+        </div>
 
-        {/* ── FOOTER ─────────────────────────────────────────────────── */}
-        <div style={{ height: '1px', background: 'var(--color-divider)', marginBottom: 'var(--space-3)' }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)' }}>
+        {/* ─────────────────────────────────────────────
+             FOOTER — sticky, safe-area aware
+        ───────────────────────────────────────────── */}
+        <div className="modal-box__footer">
           <button
             onClick={handleDelete}
             disabled={isDeleting || isSaving}
@@ -507,16 +410,18 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
               borderRadius: 'var(--radius-md)',
               background: 'none', border: 'none',
               fontSize: 'var(--text-sm)',
-              color: 'oklch(from var(--color-error) l c h / 0.7)',
+              color: 'oklch(from var(--color-error) l c h / 0.8)',
               cursor: isDeleting ? 'not-allowed' : 'pointer',
               transition: 'color var(--transition), background var(--transition)',
+              minHeight: '44px',
+              WebkitTapHighlightColor: 'transparent',
             }}
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-error)'
               ;(e.currentTarget as HTMLButtonElement).style.background = 'oklch(from var(--color-error) l c h / 0.08)'
             }}
             onMouseLeave={e => {
-              ;(e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.7)'
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.8)'
               ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
             }}
           >
@@ -526,27 +431,15 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
 
           {isEditing ? (
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <button
-                onClick={cancelEdit}
-                disabled={isSaving}
-                className="btn btn-ghost"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving || isUploadingCover}
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-              >
+              <button onClick={cancelEdit} disabled={isSaving} className="btn btn-ghost">Abbrechen</button>
+              <button onClick={handleSave} disabled={isSaving || isUploadingCover} className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {isSaving ? <Spinner /> : <Save style={{ width: '0.875rem', height: '0.875rem' }} />}
                 Speichern
               </button>
             </div>
           ) : (
-            <button onClick={onClose} className="btn btn-ghost">
-              Schließen
-            </button>
+            <button onClick={onClose} className="btn btn-ghost">Schließen</button>
           )}
         </div>
       </div>

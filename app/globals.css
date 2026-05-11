@@ -9,7 +9,7 @@
    Density: balanced — covers need room to breathe
 ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* ─── DESIGN TOKENS — DARK MODE (Standard) ─────────────────────────────────────── */
+/* ─── DESIGN TOKENS — DARK MODE (Standard) ──────────────────────────────────────────── */
 
 :root, [data-theme="dark"] {
   /* Fluid type scale */
@@ -107,7 +107,7 @@
   --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ─── DESIGN TOKENS — LIGHT MODE ────────────────────────────────────────── */
+/* ─── DESIGN TOKENS — LIGHT MODE ──────────────────────────────────────────── */
 
 [data-theme="light"] {
   --color-bg:               #f5f2ee;
@@ -184,7 +184,7 @@
   }
 }
 
-/* ─── KEYFRAMES ────────────────────────────────────────────────────────────────────────── */
+/* ─── KEYFRAMES ────────────────────────────────────────────────────────────────────────────────────── */
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
@@ -219,7 +219,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* ─── BASE RESET ────────────────────────────────────────────────────────────────────────── */
+/* ─── BASE RESET ────────────────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
   *, *::before, *::after {
@@ -307,7 +307,7 @@
   }
 }
 
-/* ─── ANIMATION UTILITIES ──────────────────────────────────────────────────────────── */
+/* ─── ANIMATION UTILITIES ──────────────────────────────────────────────────────────────────── */
 
 @utility anim-fade-up    { animation: fadeUp  0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @utility anim-fade-in    { animation: fadeIn  0.28s ease-out both; }
@@ -332,7 +332,7 @@
 @utility delay-7 { animation-delay: 0.28s; }
 @utility delay-8 { animation-delay: 0.32s; }
 
-/* ─── TYPOGRAPHY UTILITIES ─────────────────────────────────────────────────────────── */
+/* ─── TYPOGRAPHY UTILITIES ─────────────────────────────────────────────────────────────────── */
 
 @utility font-display {
   font-family: var(--font-display), Georgia, serif;
@@ -367,9 +367,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── BUTTONS ────────────────────────────────────────────────────────────────────────────── */
+/* ─── BUTTONS ────────────────────────────────────────────────────────────────────────────────────────────── */
 
-/* Shared base for btn-bib-primary and the newer .btn.btn-primary alias */
 @utility btn-bib-primary {
   display: inline-flex;
   align-items: center;
@@ -459,10 +458,7 @@
 .btn-bib-outline:active:not(:disabled) { transform: translateY(1px); }
 .btn-bib-outline:disabled { opacity: 0.40; cursor: not-allowed; }
 
-/* ─── BUTTON ALIASES (used by migrated modals) ─────────────────────────────────── */
-/* .btn.btn-primary → btn-bib-primary */
-/* .btn.btn-ghost → btn-bib-ghost */
-/* .btn.btn-icon → small square icon button */
+/* ─── BUTTON ALIASES ──────────────────────────────────────────────────────────────────────────────── */
 
 .btn {
   display: inline-flex;
@@ -518,18 +514,18 @@
   transform: translateY(1px);
 }
 
-/* Icon-only button: square, no padding override */
+/* Icon-only button */
 .btn.btn-icon {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   min-height: unset;
   padding: 0;
   border-radius: var(--radius-md);
+  flex-shrink: 0;
 }
 
-/* ─── FORM INPUTS ────────────────────────────────────────────────────────────────────────── */
+/* ─── FORM INPUTS ────────────────────────────────────────────────────────────────────────────────────────── */
 
-/* .input — shared alias for migrated modals */
 .input {
   display: block;
   width: 100%;
@@ -553,7 +549,6 @@
 }
 .input::placeholder { color: var(--color-text-faint); }
 .input:disabled { opacity: 0.5; cursor: not-allowed; }
-/* select inside .input */
 select.input {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -623,7 +618,7 @@ select.input {
 }
 .bib-range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px; height: 16px;
+  width: 20px; height: 20px;
   border-radius: 50%;
   background: var(--color-accent);
   cursor: pointer;
@@ -633,20 +628,19 @@ select.input {
 }
 .bib-range::-webkit-slider-thumb:hover { transform: scale(1.2); }
 .bib-range::-moz-range-thumb {
-  width: 16px; height: 16px;
+  width: 20px; height: 20px;
   border-radius: 50%;
   background: var(--color-accent);
   cursor: pointer;
   border: 2px solid var(--color-surface-2);
 }
 
-/* ─── MODAL ────────────────────────────────────────────────────────────────────────────── */
+/* ─── MODAL ────────────────────────────────────────────────────────────────────────────────────────────── */
 
 @utility modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 50;
-  /* Use theme-aware backdrop token */
   background: var(--color-backdrop);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -681,32 +675,99 @@ select.input {
   }
 }
 
-/* modal-box: alias used by migrated modals */
+/*
+  modal-box: Bottom-Sheet on mobile, centered dialog on desktop.
+
+  IMPORTANT STRUCTURE: Components using modal-box must follow this pattern:
+
+    <div class="modal-box">
+      <div class="modal-box__handle">   ← drag indicator, mobile only
+      <div class="modal-box__header">   ← sticky, never scrolls
+      <div class="modal-box__body">     ← scrolls
+      <div class="modal-box__footer">   ← sticky, pinned above safe-area
+    </div>
+
+  On mobile: fills up to 92dvh, flex-column so header/footer are sticky.
+  On desktop: max-width 520px, centered, standard overflow.
+*/
 .modal-box {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   width: 100%;
   max-width: 100%;
+  /* Height: cap at 92dvh, flex column so inner sections can use flex-grow */
   max-height: 92dvh;
-  overflow-y: auto;
-  padding: var(--space-4) var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow-lg);
   animation: sheetUp 0.30s cubic-bezier(0.22, 1, 0.36, 1) both;
-  /* Ensure opaque background — critical for light mode */
   isolation: isolate;
+  overflow: hidden; /* children handle their own scroll */
 }
 @media (min-width: 640px) {
   .modal-box {
     max-width: 520px;
     border-radius: var(--radius-xl);
     max-height: 88dvh;
-    padding: var(--space-6) var(--space-6) var(--space-6);
     animation: modalIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
-/* ─── STATUS PILLS ─────────────────────────────────────────────────────────────────── */
+/* Drag handle — mobile only */
+.modal-box__handle {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3) 0 var(--space-1);
+  flex-shrink: 0;
+}
+.modal-box__handle-bar {
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+@media (min-width: 640px) {
+  .modal-box__handle { display: none; }
+}
+
+/* Header — sticky, never scrolls */
+.modal-box__header {
+  padding: var(--space-4) var(--space-5) var(--space-4);
+  flex-shrink: 0;
+}
+
+/* Divider inside modal */
+.modal-box__divider {
+  height: 1px;
+  background: var(--color-divider);
+  flex-shrink: 0;
+  margin: 0 var(--space-5);
+}
+
+/* Scrollable body */
+.modal-box__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Footer — pinned, safe-area aware */
+.modal-box__footer {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-5);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: var(--color-surface); /* ensure opaque over page content */
+}
+
+/* ─── STATUS PILLS ───────────────────────────────────────────────────────────────────────────── */
 
 @utility status-unread {
   display: inline-flex;
@@ -769,7 +830,7 @@ select.input {
   flex-shrink: 0;
 }
 
-/* ─── TABS ────────────────────────────────────────────────────────────────────────────── */
+/* ─── TABS ────────────────────────────────────────────────────────────────────────────────────────────── */
 
 @utility bib-tabs {
   display: flex;
@@ -837,7 +898,7 @@ select.input {
   color: var(--color-accent);
 }
 
-/* ─── BOOK CARD ─────────────────────────────────────────────────────────────────────────── */
+/* ─── BOOK CARD ────────────────────────────────────────────────────────────────────────────────────────────── */
 
 @utility book-card {
   background: var(--color-surface);
@@ -885,7 +946,7 @@ select.input {
   }
 }
 
-/* ─── COVER PLACEHOLDER ───────────────────────────────────────────────────────────────── */
+/* ─── COVER PLACEHOLDER ───────────────────────────────────────────────────────────────────────────── */
 
 @utility cover-placeholder {
   position: relative;
@@ -894,7 +955,7 @@ select.input {
   justify-content: center;
 }
 
-/* ─── SKELETON ──────────────────────────────────────────────────────────────────────────── */
+/* ─── SKELETON ────────────────────────────────────────────────────────────────────────────────────────────── */
 
 @utility skeleton-shimmer {
   background: linear-gradient(
@@ -908,7 +969,7 @@ select.input {
   border-radius: var(--radius-sm);
 }
 
-/* ─── BOTTOM NAV (Mobile) ────────────────────────────────────────────────────────── */
+/* ─── BOTTOM NAV (Mobile) ────────────────────────────────────────────────────────────────────── */
 
 @utility bottom-nav {
   position: fixed;
@@ -967,7 +1028,7 @@ select.input {
   background: var(--color-accent-muted);
 }
 
-/* ─── MISC UTILITIES ─────────────────────────────────────────────────────────────────────── */
+/* ─── MISC UTILITIES ────────────────────────────────────────────────────────────────────────────────────────── */
 
 @utility bib-divider {
   height: 1px;
