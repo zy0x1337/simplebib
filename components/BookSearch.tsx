@@ -1,32 +1,53 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, BookOpen, AlertCircle, X } from 'lucide-react'
+import { Search, BookOpen, AlertCircle, X, RefreshCw } from 'lucide-react'
 
 interface BookSearchProps {
   onBookSelect: (book: { title: string; authors: string; coverUrl: string }) => void
 }
 
-// Retry NUR bei 503 (Server temporarily unavailable).
-// 429 wird NICHT retried — Google Books gibt 429 auch ohne echtes Rate-Limit
-// zurück wenn kein API-Key gesetzt ist; weiteres Warten hilft nicht.
-async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
-  let lastRes: Response | null = null
-
-  for (let i = 0; i < maxRetries; i++) {
+/*
+  fetchWithRetry:
+  - 503:       bis zu 3x mit exponential backoff (typischer Server-Overload)
+  - 429:       1x retry nach 2s — Google gibt 429 ohne API-Key oft fälschlicherweise
+                beim allerersten Request (shared IP / Quota-Bucket). Ein einzelner
+                Retry deckt diesen Falsch-Positiv-Fall ab, ohne echten User-Spamming
+                zu retrien.
+  - alles andere: sofort zurückgeben
+*/
+async function fetchWithRetry(url: string): Promise<Response> {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const res = await fetch(url)
 
-    if (res.status === 503 && i < maxRetries - 1) {
-      lastRes = res
-      await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000))
+    if (res.status === 503 && attempt < 2) {
+      await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 800))
       continue
     }
 
-    // 200, 400, 429 und alles andere: sofort zurückgeben
+    if (res.status === 429 && attempt === 0) {
+      // 1x kurz warten, dann nochmal — deckt IP-Quota-Bucket-Fehler ab
+      await new Promise(r => setTimeout(r, 2000))
+      continue
+    }
+
     return res
   }
 
-  return lastRes!
+  // Fallback: letzten Versuch nochmal holen (sollte nicht erreicht werden)
+  return fetch(url)
+}
+
+function getRateLimitMessage(status: number): string {
+  if (status === 429) {
+    return (
+      'Google Books hat die Anfrage abgelehnt. Das passiert manchmal bei der kostenlosen API ohne Key. '
+      + 'Kurz warten und nochmal versuchen — oder Titel manuell eingeben.'
+    )
+  }
+  if (status === 503) return 'Google Books ist gerade nicht erreichbar. Bitte erneut versuchen.'
+  if (status === 400) return 'Ungültige Suchanfrage. Bitte anderen Begriff versuchen.'
+  return `Google Books Fehler (${status}). Bitte erneut versuchen.`
 }
 
 export function BookSearch({ onBookSelect }: BookSearchProps) {
@@ -35,30 +56,29 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
   const [results, setResults]         = useState<any[]>([])
   const [showResults, setShowResults] = useState(false)
   const [error, setError]             = useState<string | null>(null)
+  const [lastQuery, setLastQuery]     = useState('')
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!query.trim()) return
+  const doSearch = async (searchQuery: string) => {
+    if (!searchQuery.trim()) return
 
     setIsLoading(true)
     setResults([])
     setShowResults(false)
     setError(null)
+    setLastQuery(searchQuery)
 
     try {
-      const clean  = query.replace(/-/g, '').trim()
+      const clean  = searchQuery.replace(/-/g, '').trim()
       const isISBN = /^\d{10,13}$/.test(clean)
       const url    = isISBN
         ? `https://www.googleapis.com/books/v1/volumes?q=isbn:${clean}`
-        : `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=15`
+        : `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=15`
 
       const res = await fetchWithRetry(url)
 
       if (!res.ok) {
-        if (res.status === 503) throw new Error('Google Books ist vorübergehend nicht verfügbar.')
-        if (res.status === 429) throw new Error('Google Books Rate-Limit. Bitte 30 Sekunden warten und erneut versuchen.')
-        if (res.status === 400) throw new Error('Ungültige Suchanfrage.')
-        throw new Error(`API-Fehler ${res.status}`)
+        setError(getRateLimitMessage(res.status))
+        return
       }
 
       const data = await res.json()
@@ -68,10 +88,11 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
         return
       }
 
+      // Bei ISBN + Einzeltreffer: direkt übernehmen, kein Dropdown
       if (isISBN && data.items.length === 1) {
         const v = data.items[0].volumeInfo
         onBookSelect({
-          title:    v.title,
+          title:    v.title ?? '',
           authors:  v.authors?.join(', ') ?? 'Unbekannter Autor',
           coverUrl: v.imageLinks?.thumbnail?.replace('http:', 'https:') ?? '',
         })
@@ -90,17 +111,31 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
       }))
       setShowResults(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unbekannter Fehler.')
+      // Netzwerk-Fehler (kein Internet, CORS, etc.)
+      const msg = err instanceof Error ? err.message : ''
+      if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+        setError('Keine Verbindung zu Google Books. Internetverbindung prüfen.')
+      } else {
+        setError('Fehler bei der Buchsuche. Bitte erneut versuchen.')
+      }
     } finally {
       setIsLoading(false)
     }
   }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    doSearch(query)
+  }
+
+  const handleRetry = () => doSearch(lastQuery)
 
   const handleSelect = (book: any) => {
     onBookSelect(book)
     setQuery('')
     setResults([])
     setShowResults(false)
+    setError(null)
   }
 
   const handleClear = () => {
@@ -141,7 +176,10 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
           disabled={isLoading || !query.trim()}
           className="btn-bib-primary min-w-[5.5rem]"
         >
-          {isLoading ? <span className="loading loading-spinner loading-xs" /> : 'Suchen'}
+          {isLoading
+            ? <span className="loading loading-spinner loading-xs" />
+            : 'Suchen'
+          }
         </button>
       </form>
 
@@ -149,17 +187,34 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
         <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-lg
                         bg-error/8 border border-error/20">
           <AlertCircle className="w-4 h-4 text-error mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-error/90">{error}</p>
+          <div className="flex-1">
+            <p className="text-sm text-error/90">{error}</p>
+            {lastQuery && (
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={isLoading}
+                className="mt-1.5 flex items-center gap-1 text-xs text-error/70
+                           hover:text-error transition-colors"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Nochmal versuchen
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       {showResults && results.length > 0 && (
         <div className="mt-2 bg-base-100 rounded-lg overflow-hidden border border-base-content/8
                         shadow-lg max-h-[420px] overflow-y-auto anim-fade-in">
-          <div className="px-4 py-2.5 border-b border-base-content/8 flex items-center justify-between">
+          <div className="px-4 py-2.5 border-b border-base-content/8
+                          flex items-center justify-between">
             <span className="label-caps">{results.length} Ergebnisse</span>
-            <button onClick={handleClear}
-              className="text-base-content/35 hover:text-base-content/70 transition-colors text-xs">
+            <button
+              onClick={handleClear}
+              className="text-base-content/35 hover:text-base-content/70 transition-colors text-xs"
+            >
               Schließen
             </button>
           </div>
@@ -189,7 +244,9 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
                 <p className="text-xs text-base-content/50 truncate">
                   {book.authors}
                   {book.publishedDate && (
-                    <span className="text-base-content/35"> · {book.publishedDate.slice(0, 4)}</span>
+                    <span className="text-base-content/35">
+                      {' · '}{book.publishedDate.slice(0, 4)}
+                    </span>
                   )}
                 </p>
               </div>
