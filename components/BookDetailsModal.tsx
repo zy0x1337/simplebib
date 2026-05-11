@@ -44,27 +44,29 @@ function StarRatingView({ rating }: { rating: number }) {
     <div style={{ display: 'flex', gap: '0.2rem' }}>
       {Array.from({ length: 5 }, (_, i) => {
         const n = i + 1
-        if (rating >= n)       return <Star     key={n} style={{ width: '1.1rem', height: '1.1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
-        if (rating >= n - 0.5) return <StarHalf key={n} style={{ width: '1.1rem', height: '1.1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
-        return                        <Star     key={n} style={{ width: '1.1rem', height: '1.1rem', color: 'var(--color-border)' }} />
+        if (rating >= n)
+          return <Star key={n} style={{ width: '1rem', height: '1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        if (rating >= n - 0.5)
+          return <StarHalf key={n} style={{ width: '1rem', height: '1rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        return <Star key={n} style={{ width: '1rem', height: '1rem', fill: 'none', color: 'var(--color-border)' }} />
       })}
     </div>
   )
 }
 
 export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProps) {
-  const [isEditing, setIsEditing]           = useState(false)
-  const [editedTitle, setEditedTitle]       = useState(book.title)
-  const [editedAuthor, setEditedAuthor]     = useState(book.author)
-  const [editedStatus, setEditedStatus]     = useState(book.status)
-  const [editedRating, setEditedRating]     = useState(book.rating || 0)
-  const [editedPosition, setEditedPosition] = useState(book.seriesPosition || 1)
-  const [editedCoverUrl, setEditedCoverUrl] = useState(book.coverUrl || '')
+  const [isEditing, setIsEditing]             = useState(false)
+  const [editedTitle, setEditedTitle]         = useState(book.title)
+  const [editedAuthor, setEditedAuthor]       = useState(book.author)
+  const [editedStatus, setEditedStatus]       = useState(book.status)
+  const [editedRating, setEditedRating]       = useState(book.rating || 0)
+  const [editedPosition, setEditedPosition]   = useState(book.seriesPosition || 1)
+  const [editedCoverUrl, setEditedCoverUrl]   = useState(book.coverUrl || '')
   const [editedCoverBlob, setEditedCoverBlob] = useState<Blob | null>(book.coverBlob || null)
   const [editedCoverType, setEditedCoverType] = useState(book.coverType)
-  const [coverPreview, setCoverPreview]     = useState<string | null>(null)
-  const [isDeleting, setIsDeleting]         = useState(false)
-  const [isSaving, setIsSaving]             = useState(false)
+  const [coverPreview, setCoverPreview]       = useState<string | null>(null)
+  const [isDeleting, setIsDeleting]           = useState(false)
+  const [isSaving, setIsSaving]               = useState(false)
   const [isUploadingCover, setIsUploadingCover] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -83,7 +85,7 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
     } else {
       setCoverPreview(null)
     }
-  }, [book])
+  }, [book.coverBlob, book.coverUrl, book.coverType])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -144,18 +146,6 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
 
   if (!isOpen) return null
 
-  /* ── Shared label style ── */
-  const labelStyle: React.CSSProperties = {
-    fontFamily: 'var(--font-body)',
-    fontSize: 'var(--text-xs)',
-    fontWeight: 600,
-    letterSpacing: 'var(--tracking-widest)',
-    textTransform: 'uppercase',
-    color: 'var(--color-text-faint)',
-    marginBottom: 'var(--space-2)',
-    display: 'block',
-  }
-
   return (
     <div className="modal-overlay anim-fade-in" onClick={onClose}>
       <div
@@ -166,22 +156,19 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
         aria-modal="true"
         aria-labelledby="book-details-title"
       >
-        {/* ── Handle ── */}
+        {/* Handle — mobile only, via CSS */}
         <div className="modal-box__handle">
           <div className="modal-box__handle-bar" />
         </div>
 
-        {/* ─────────────────────────────────────────────
-             HEADER — sticky, always visible
-        ───────────────────────────────────────────── */}
+        {/* ── HEADER: Cover + Titel + Actions ────────────────────────── */}
         <div className="modal-box__header">
           <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
 
             {/* Cover */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <div style={{
-                width: '4.5rem',
-                height: '6.75rem',
+                width: '5rem', height: '7.5rem',
                 borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
                 background: 'var(--color-surface-2)',
@@ -193,7 +180,7 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <BookOpen style={{ width: '1.25rem', height: '1.25rem', color: 'var(--color-text-faint)' }} />
+                    <BookOpen style={{ width: '1.5rem', height: '1.5rem', color: 'var(--color-text-faint)' }} />
                   </div>
                 )}
               </div>
@@ -207,34 +194,38 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                     position: 'absolute', inset: 0,
                     borderRadius: 'var(--radius-md)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'oklch(0.05 0.01 60 / 0.7)',
+                    background: 'oklch(0.05 0.01 60 / 0.65)',
                     border: 'none', cursor: 'pointer', color: 'white',
+                    opacity: 0, transition: 'opacity var(--transition)',
                   }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0' }}
                 >
                   <Upload style={{ width: '1.25rem', height: '1.25rem' }} />
                 </button>
               )}
               <input ref={fileInputRef} type="file" accept="image/*"
-                style={{ display: 'none' }} onChange={handleFileUpload} />
+                style={{ display: 'none' }} onChange={handleFileUpload} disabled={isUploadingCover} />
             </div>
 
             {/* Info */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
               {isEditing ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                  <input className="input" value={editedTitle} onChange={e => setEditedTitle(e.target.value)}
+                  <input className="input" value={editedTitle}
+                    onChange={e => setEditedTitle(e.target.value)}
                     placeholder="Titel" disabled={isSaving} style={{ fontWeight: 600 }} />
-                  <input className="input" value={editedAuthor} onChange={e => setEditedAuthor(e.target.value)}
+                  <input className="input" value={editedAuthor}
+                    onChange={e => setEditedAuthor(e.target.value)}
                     placeholder="Autor" disabled={isSaving} />
                   <input className="input" type="url" value={editedCoverUrl}
                     onChange={e => {
                       setEditedCoverUrl(e.target.value)
-                      setCoverPreview(e.target.value || null)
-                      setEditedCoverType(e.target.value ? 'url' : 'none')
+                      if (e.target.value) { setCoverPreview(e.target.value); setEditedCoverType('url') }
+                      else setEditedCoverType('none')
                     }}
-                    placeholder="Cover-URL" disabled={isSaving}
-                    style={{ fontSize: 'var(--text-xs)' }}
-                  />
+                    placeholder="Cover-URL (optional)" disabled={isSaving}
+                    style={{ fontSize: 'var(--text-xs)' }} />
                 </div>
               ) : (
                 <>
@@ -250,43 +241,38 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                     WebkitLineClamp: 3,
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
-                  }}>
-                    {book.title}
-                  </h2>
-                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>
+                  }}>{book.title}</h2>
+                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
                     {book.author}
                   </p>
                   {series && (
                     <p style={{
                       fontSize: 'var(--text-xs)', fontWeight: 600,
-                      letterSpacing: 'var(--tracking-widest)', textTransform: 'uppercase',
-                      color: 'var(--color-accent)', marginTop: 'var(--space-1)',
+                      letterSpacing: 'var(--tracking-widest)',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-accent)',
+                      marginTop: '0.15rem',
                     }}>
                       {series.name}{book.seriesPosition ? ` · Band ${book.seriesPosition}` : ''}
                     </p>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginTop: 'var(--space-2)', flexWrap: 'wrap' }}>
+                  <div style={{ marginTop: 'var(--space-2)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--space-2)' }}>
                     <span className={STATUS_CLS[book.status]}>{STATUS_LABEL[book.status]}</span>
-                    {(book.rating ?? 0) > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <StarRatingView rating={book.rating ?? 0} />
-                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>{book.rating}/5</span>
-                      </div>
-                    )}
+                    {(book.rating ?? 0) > 0 && <StarRatingView rating={book.rating ?? 0} />}
                   </div>
                 </>
               )}
             </div>
 
-            {/* Actions top-right */}
+            {/* Top actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', flexShrink: 0 }}>
               <button onClick={onClose} className="btn btn-icon btn-ghost" aria-label="Schließen">
-                <X style={{ width: '1.1rem', height: '1.1rem' }} />
+                <X style={{ width: '1rem', height: '1rem' }} />
               </button>
               {!isEditing && (
                 <button onClick={() => setIsEditing(true)} className="btn btn-icon btn-ghost"
                   aria-label="Bearbeiten" style={{ color: 'var(--color-accent)' }}>
-                  <Edit2 style={{ width: '1.1rem', height: '1.1rem' }} />
+                  <Edit2 style={{ width: '1rem', height: '1rem' }} />
                 </button>
               )}
             </div>
@@ -295,25 +281,21 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
 
         <div className="modal-box__divider" />
 
-        {/* ─────────────────────────────────────────────
-             BODY — scrollable
-        ───────────────────────────────────────────── */}
+        {/* ── BODY: scrollable content ──────────────────────────────── */}
         <div className="modal-box__body">
+
           {isEditing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
               {/* Status */}
-              <div>
-                <span style={labelStyle}>Status</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <p className="label-caps">Status</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-2)' }}>
                   {STATUS_OPTIONS.map(({ value, label }) => (
-                    <button
-                      key={value} type="button"
-                      onClick={() => setEditedStatus(value)}
-                      disabled={isSaving}
+                    <button key={value} type="button"
+                      onClick={() => setEditedStatus(value)} disabled={isSaving}
                       style={{
-                        padding: '0.75rem 0',
-                        minHeight: '48px',
+                        padding: '0.6rem 0',
                         borderRadius: 'var(--radius-md)',
                         border: '1px solid',
                         borderColor: editedStatus === value ? 'var(--color-accent)' : 'var(--color-border)',
@@ -323,51 +305,49 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                         fontWeight: editedStatus === value ? 600 : 400,
                         cursor: 'pointer',
                         transition: 'all var(--transition)',
-                        WebkitTapHighlightColor: 'transparent',
                       }}
-                    >
-                      {label}
-                    </button>
+                    >{label}</button>
                   ))}
                 </div>
               </div>
 
-              {/* Star rating */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
-                  <span style={labelStyle}>Bewertung</span>
+              {/* Rating */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p className="label-caps">Bewertung</p>
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                    {editedRating > 0 ? `${editedRating} / 5` : '—'}
+                    {editedRating > 0 ? `${editedRating}\u00a0/\u00a05` : '\u2014'}
                   </span>
                 </div>
-                {/* Star row with large touch targets */}
-                <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginBottom: 'var(--space-3)' }}>
+                {/* Star buttons */}
+                <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
                   {Array.from({ length: 5 }, (_, i) => {
-                    const full = i + 1
-                    const half = i + 0.5
-                    const filled   = editedRating >= full
-                    const halfFill = !filled && editedRating >= half
+                    const full = i + 1, half = i + 0.5
+                    const filled = editedRating >= full
+                    const halfFilled = !filled && editedRating >= half
                     return (
-                      <div key={i} style={{ position: 'relative', width: '2.75rem', height: '2.75rem' }}>
-                        {/* Half click zone */}
-                        <button type="button" onClick={() => setEditedRating(editedRating === half ? 0 : half)}
-                          aria-label={`${half} Sterne`}
-                          style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '50%', background: 'none', border: 'none', cursor: 'pointer', zIndex: 1 }} />
-                        {/* Full click zone */}
-                        <button type="button" onClick={() => setEditedRating(editedRating === full ? 0 : full)}
-                          aria-label={`${full} Sterne`}
-                          style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '50%', background: 'none', border: 'none', cursor: 'pointer', zIndex: 1 }} />
-                        {/* Icon */}
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                          {halfFill
-                            ? <StarHalf style={{ width: '2rem', height: '2rem', fill: 'var(--color-star)', color: 'var(--color-star)', transition: 'all 120ms ease' }} />
-                            : <Star    style={{ width: '2rem', height: '2rem', fill: filled ? 'var(--color-star)' : 'none', color: filled ? 'var(--color-star)' : 'var(--color-border)', transition: 'all 120ms ease' }} />
-                          }
-                        </div>
+                      <div key={i} style={{ position: 'relative' }}>
+                        <button type="button" onClick={() => setEditedRating(p => p === half ? 0 : half)}
+                          style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '50%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, zIndex: 1 }}
+                          aria-label={`${half} Sterne`} />
+                        <button type="button" onClick={() => setEditedRating(p => p === full ? 0 : full)}
+                          style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '50%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, zIndex: 1 }}
+                          aria-label={`${full} Sterne`} />
+                        {halfFilled
+                          ? <StarHalf style={{ width: '1.75rem', height: '1.75rem', fill: 'var(--color-star)', color: 'var(--color-star)', pointerEvents: 'none' }} />
+                          : <Star style={{ width: '1.75rem', height: '1.75rem', fill: filled ? 'var(--color-star)' : 'none', color: filled ? 'var(--color-star)' : 'var(--color-border)', pointerEvents: 'none', transition: 'fill 120ms ease' }} />
+                        }
                       </div>
                     )
                   })}
+                  {editedRating > 0 && (
+                    <button type="button" onClick={() => setEditedRating(0)}
+                      style={{ marginLeft: 'var(--space-1)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)' }}>
+                      zurücksetzen
+                    </button>
+                  )}
                 </div>
+                {/* Range fallback */}
                 <input type="range" min="0" max="5" step="0.5" value={editedRating}
                   onChange={e => setEditedRating(parseFloat(e.target.value))}
                   className="bib-range"
@@ -375,31 +355,28 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                 />
               </div>
 
-              {/* Series position */}
+              {/* Bandnummer */}
               {book.seriesId && (
-                <div>
-                  <span style={labelStyle}>Bandnummer</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                  <p className="label-caps">Bandnummer</p>
                   <input type="number" min={1} value={editedPosition}
                     onChange={e => setEditedPosition(parseInt(e.target.value) || 1)}
-                    className="input" style={{ width: '7rem' }} disabled={isSaving} />
+                    className="input" style={{ width: '6rem' }} disabled={isSaving} />
                 </div>
               )}
+
             </div>
           ) : (
             /* View mode */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-              <p style={{ ...labelStyle, marginBottom: 0 }}>
-                Hinzugefügt {new Date(book.dateAdded).toLocaleDateString('de-DE', {
-                  day: 'numeric', month: 'long', year: 'numeric',
-                })}
-              </p>
-            </div>
+            <p className="label-caps" style={{ paddingTop: 'var(--space-1)' }}>
+              Hinzugefügt {new Date(book.dateAdded).toLocaleDateString('de-DE', {
+                day: 'numeric', month: 'long', year: 'numeric',
+              })}
+            </p>
           )}
         </div>
 
-        {/* ─────────────────────────────────────────────
-             FOOTER — sticky, safe-area aware
-        ───────────────────────────────────────────── */}
+        {/* ── FOOTER: sticky, safe-area ─────────────────────────────── */}
         <div className="modal-box__footer">
           <button
             onClick={handleDelete}
@@ -410,18 +387,16 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
               borderRadius: 'var(--radius-md)',
               background: 'none', border: 'none',
               fontSize: 'var(--text-sm)',
-              color: 'oklch(from var(--color-error) l c h / 0.8)',
+              color: 'oklch(from var(--color-error) l c h / 0.7)',
               cursor: isDeleting ? 'not-allowed' : 'pointer',
               transition: 'color var(--transition), background var(--transition)',
-              minHeight: '44px',
-              WebkitTapHighlightColor: 'transparent',
             }}
             onMouseEnter={e => {
               ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-error)'
               ;(e.currentTarget as HTMLButtonElement).style.background = 'oklch(from var(--color-error) l c h / 0.08)'
             }}
             onMouseLeave={e => {
-              ;(e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.8)'
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.7)'
               ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
             }}
           >
@@ -431,7 +406,9 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
 
           {isEditing ? (
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <button onClick={cancelEdit} disabled={isSaving} className="btn btn-ghost">Abbrechen</button>
+              <button onClick={cancelEdit} disabled={isSaving} className="btn btn-ghost">
+                Abbrechen
+              </button>
               <button onClick={handleSave} disabled={isSaving || isUploadingCover} className="btn btn-primary"
                 style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {isSaving ? <Spinner /> : <Save style={{ width: '0.875rem', height: '0.875rem' }} />}
@@ -442,6 +419,7 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
             <button onClick={onClose} className="btn btn-ghost">Schließen</button>
           )}
         </div>
+
       </div>
     </div>
   )
