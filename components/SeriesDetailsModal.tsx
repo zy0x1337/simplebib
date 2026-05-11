@@ -20,12 +20,11 @@ function MiniStars({ rating }: { rating?: number }) {
       {Array.from({ length: 5 }, (_, i) => {
         const n = i + 1
         const color = rating >= n - 0.5 ? 'var(--color-star)' : 'var(--color-text-faint)'
-        const fill  = rating >= n ? 'var(--color-star)' : 'none'
         return rating >= n
-          ? <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill }} />
+          ? <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill: 'var(--color-star)' }} />
           : rating >= n - 0.5
           ? <StarHalf key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill: 'var(--color-star)' }} />
-          : <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill: 'none' }} />
+          : <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-faint)', fill: 'none' }} />
       })}
     </div>
   )
@@ -83,7 +82,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   // When a sub-modal is open, hide (not unmount) this modal so there's no z-index conflict
   const isSubModalOpen = isAddBookOpen || !!selectedBook
   const hiddenStyle: React.CSSProperties = isSubModalOpen
-    ? { visibility: 'hidden', pointerEvents: 'none' }
+    ? { visibility: 'hidden' as const, pointerEvents: 'none' as const }
     : {}
 
   return (
@@ -91,7 +90,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
       {/* ── SeriesDetails panel ───────────────────────────────────────── */}
       <div
         className="modal-overlay anim-fade-in"
-        style={{ ...hiddenStyle }}
+        style={hiddenStyle}
         onClick={onClose}
       >
         <div
@@ -113,13 +112,13 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
           {/* Header */}
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
-            padding: 'var(--space-1) 0 var(--space-3)',
+            paddingBottom: 'var(--space-3)',
           }}>
             {/* Book count */}
             <div style={{ flexShrink: 0, width: '3rem', textAlign: 'center', paddingTop: '0.125rem' }}>
               <span style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'var(--text-2xl)',
+                fontSize: 'var(--text-xl)',
                 fontWeight: 700,
                 lineHeight: 1,
                 color: 'var(--color-accent)',
@@ -150,9 +149,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                     autoFocus
                     disabled={isSavingName}
                   />
-                  <button
-                    onClick={handleSaveName}
-                    disabled={isSavingName}
+                  <button onClick={handleSaveName} disabled={isSavingName}
                     className="btn btn-icon btn-ghost"
                     aria-label="Speichern"
                     style={{ color: 'var(--color-accent)' }}
@@ -230,7 +227,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
             </button>
           </div>
 
-          <div style={{ height: '1px', background: 'var(--color-divider)', margin: '0 0 var(--space-2)' }} />
+          <div style={{ height: '1px', background: 'var(--color-divider)', marginBottom: 'var(--space-2)' }} />
 
           {/* Book list */}
           <div style={{ padding: 'var(--space-1) 0' }}>
@@ -296,6 +293,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                       <div style={{
                         width: '100%', height: '100%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'var(--color-surface-2)',
                       }}>
                         <BookOpen style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-faint)' }} />
                       </div>
@@ -330,7 +328,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
           <div style={{ height: '1px', background: 'var(--color-divider)', margin: 'var(--space-2) 0 0' }} />
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: 'var(--space-4) 0 var(--space-2)',
+            padding: 'var(--space-4) 0 var(--space-1)',
           }}>
             <button
               onClick={handleDelete}
@@ -346,11 +344,11 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                 transition: 'color var(--transition), background var(--transition)',
               }}
               onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-error)'
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-error)'
                 ;(e.currentTarget as HTMLButtonElement).style.background = 'oklch(from var(--color-error) l c h / 0.08)'
               }}
               onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.7)'
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.7)'
                 ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
               }}
             >
@@ -370,18 +368,20 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
         </div>
       </div>
 
-      {/* ── Sub-modals — always mounted, controlled via isOpen prop ─── */}
+      {/* ── Sub-modals — only mount when needed to avoid null-prop crash ── */}
       <AddBookToSeriesModal
         series={series}
         isOpen={isAddBookOpen}
         onClose={() => setIsAddBookOpen(false)}
       />
 
-      <BookDetailsModal
-        book={selectedBook!}
-        isOpen={!!selectedBook}
-        onClose={() => setSelectedBook(null)}
-      />
+      {selectedBook && (
+        <BookDetailsModal
+          book={selectedBook}
+          isOpen={true}
+          onClose={() => setSelectedBook(null)}
+        />
+      )}
     </>
   )
 }
