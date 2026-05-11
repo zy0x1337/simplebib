@@ -3,215 +3,280 @@
   themes: light --default, dark --prefersdark;
 }
 
+/* ─── BASE ─────────────────────────────────────────────────────────────── */
 @layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
   html {
     scroll-behavior: smooth;
+    hanging-punctuation: first last;
+    scroll-padding-top: 4rem;
   }
 
   body {
     min-height: 100dvh;
-    font-feature-settings: "liga" 1, "kern" 1;
+    font-family: var(--font-body), Georgia, serif;
+    font-size: 1rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
   }
 
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-  }
+  input, select, textarea, button { font: inherit; }
+  img, video { display: block; max-width: 100%; height: auto; }
+  h1, h2, h3, h4 { text-wrap: balance; line-height: 1.2; }
+  p { text-wrap: pretty; }
 
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: oklch(var(--bc) / 0.2);
-    border-radius: 4px;
+    background: oklch(var(--bc) / 0.18);
+    border-radius: 3px;
   }
-
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(var(--bc) / 0.3);
+    background: oklch(var(--bc) / 0.32);
   }
 
+  /* Focus */
+  :focus-visible {
+    outline: 2px solid oklch(var(--p));
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  /* Selection */
+  ::selection {
+    background: oklch(var(--p) / 0.22);
+    color: oklch(var(--bc));
+  }
+
+  /* ── BACKGROUNDS ── */
+
+  /* Light: warmes Leinen — dezentes Punktraster + Papier-Rauschen */
   [data-theme="light"] body {
+    background-color: oklch(var(--b2));
     background-image:
-      url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E"),
-      radial-gradient(circle at 1px 1px, oklch(var(--bc) / 0.06) 1px, transparent 0);
-    background-size: 200px 200px, 24px 24px;
-  }
-
-  [data-theme="dark"] body {
-    background-image:
-      radial-gradient(circle at 1px 1px, oklch(var(--bc) / 0.08) 1px, transparent 0);
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='none'/%3E%3Ccircle cx='1' cy='1' r='0.6' fill='%238a7a60' opacity='0.09'/%3E%3C/svg%3E");
     background-size: 20px 20px;
   }
 
-  @keyframes book-reveal {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  /* Dark: Tinte auf Holz — sehr feines Raster, tiefschwarz */
+  [data-theme="dark"] body {
+    background-color: oklch(var(--b1));
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='none'/%3E%3Ccircle cx='1' cy='1' r='0.5' fill='%23a09080' opacity='0.06'/%3E%3C/svg%3E");
+    background-size: 18px 18px;
   }
 
-  @keyframes modalSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px) scale(0.97);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-
-  @keyframes yunoFadeIn {
-    from {
-      opacity: 0;
-      filter: blur(4px);
-    }
-    to {
-      opacity: 1;
-      filter: blur(0);
-    }
-  }
-
-  @keyframes yunoFloat {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-8px);
+  /* ── REDUCED MOTION ── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
     }
   }
 }
 
-@utility yuno-title {
-  @apply font-display font-bold tracking-tight;
-  background: linear-gradient(135deg, oklch(var(--pc)) 0%, oklch(var(--sc)) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-@utility yuno-card {
-  @apply card bg-base-100 shadow-lg transition-all duration-500 ease-out;
-  animation: book-reveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  opacity: 0;
-  border: 1px solid oklch(var(--bc) / 0.08);
-}
-
-.yuno-card:hover {
-  transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 20px 40px oklch(var(--bc) / 0.15);
-}
-
-@utility rating-star {
-  @apply cursor-pointer text-warning transition-transform duration-200;
-}
+/* ─── TYPOGRAPHY UTILITIES ─────────────────────────────────────────────── */
 
 @utility font-display {
-  font-family: var(--font-display), serif;
+  font-family: var(--font-display), Georgia, serif;
 }
 
 @utility font-body {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-body), Georgia, serif;
 }
 
-@utility stagger-1 {
-  animation-delay: 0.05s;
+/* App-Titel: Playfair, kein Gradient-Text */
+@utility app-title {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  color: oklch(var(--bc));
 }
 
-@utility stagger-2 {
-  animation-delay: 0.1s;
+/* Serifentitel für Karten */
+@utility card-title-serif {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
-@utility stagger-3 {
-  animation-delay: 0.15s;
+/* Uppercase-Label — fein getracked */
+@utility label-caps {
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: oklch(var(--bc) / 0.45);
 }
 
-@utility stagger-4 {
-  animation-delay: 0.2s;
+/* ─── ANIMATIONS ─────────────────────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@utility stagger-5 {
-  animation-delay: 0.25s;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-@utility stagger-6 {
-  animation-delay: 0.3s;
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(22px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@utility stagger-7 {
-  animation-delay: 0.35s;
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 
-@utility stagger-8 {
-  animation-delay: 0.4s;
-}
-
-@utility stagger-animation {
-  animation: book-reveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+@utility anim-fade-up {
+  animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   opacity: 0;
 }
 
-@utility modal-backdrop {
-  @apply transition-opacity duration-300;
+@utility anim-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+  opacity: 0;
 }
 
-@utility modal-box-animated {
-  @apply transition-transform duration-300 ease-out;
-  animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+@utility anim-modal {
+  animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@utility text-gradient {
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* Stagger helpers */
+@utility delay-1  { animation-delay: 0.05s; }
+@utility delay-2  { animation-delay: 0.10s; }
+@utility delay-3  { animation-delay: 0.15s; }
+@utility delay-4  { animation-delay: 0.20s; }
+@utility delay-5  { animation-delay: 0.25s; }
+@utility delay-6  { animation-delay: 0.30s; }
+@utility delay-7  { animation-delay: 0.35s; }
+@utility delay-8  { animation-delay: 0.40s; }
+
+/* ─── BOOK CARD ───────────────────────────────────────────────────────── */
+
+@utility book-card {
+  @apply bg-base-100 rounded-lg overflow-hidden cursor-pointer;
+  border: 1px solid oklch(var(--bc) / 0.08);
+  box-shadow: 0 1px 3px oklch(var(--bc) / 0.06);
+  transition: box-shadow 220ms ease, border-color 220ms ease;
 }
+
+.book-card:hover {
+  border-color: oklch(var(--bc) / 0.18);
+  box-shadow: 0 4px 16px oklch(var(--bc) / 0.10);
+}
+
+/* ─── STATUS BADGES ──────────────────────────────────────────────────── */
+
+@utility status-unread {
+  @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: oklch(var(--bc) / 0.07);
+  color: oklch(var(--bc) / 0.55);
+}
+
+@utility status-reading {
+  @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: oklch(var(--in) / 0.14);
+  color: oklch(var(--in));
+}
+
+@utility status-finished {
+  @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: oklch(var(--su) / 0.14);
+  color: oklch(var(--su));
+}
+
+/* ─── MODALS ─────────────────────────────────────────────────────────── */
+
+@utility modal-panel {
+  @apply bg-base-100 rounded-lg shadow-xl;
+  border: 1px solid oklch(var(--bc) / 0.10);
+  animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── INPUTS ─────────────────────────────────────────────────────────── */
+
+@utility bib-input {
+  @apply input w-full bg-base-200 border-0 font-body;
+  box-shadow: inset 0 0 0 1px oklch(var(--bc) / 0.12);
+  transition: box-shadow 180ms ease;
+}
+
+.bib-input:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px oklch(var(--p));
+}
+
+/* ─── BUTTONS ────────────────────────────────────────────────────────── */
+
+@utility btn-bib-primary {
+  @apply btn btn-primary font-body font-semibold tracking-wide;
+  font-size: 0.875rem;
+  letter-spacing: 0.03em;
+}
+
+@utility btn-bib-ghost {
+  @apply btn btn-ghost font-body;
+  font-size: 0.875rem;
+  color: oklch(var(--bc) / 0.65);
+}
+
+.btn-bib-ghost:hover {
+  background: oklch(var(--bc) / 0.06);
+  color: oklch(var(--bc));
+}
+
+/* ─── DIVIDER ────────────────────────────────────────────────────────── */
+
+@utility bib-divider {
+  height: 1px;
+  background: oklch(var(--bc) / 0.08);
+}
+
+/* ─── SKELETON ───────────────────────────────────────────────────────── */
+
+@utility skeleton {
+  background: linear-gradient(
+    90deg,
+    oklch(var(--b3)) 25%,
+    oklch(var(--b2)) 50%,
+    oklch(var(--b3)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* ─── PROGRESS ───────────────────────────────────────────────────────── */
 
 @utility reading-progress {
-  @apply h-1 rounded-full bg-gradient-to-r from-primary via-secondary to-accent;
-}
-
-.yuno-card:hover {
-  transform: translateY(-6px) scale(1.02);
-}
-
-.rating-star:hover {
-  transform: scale(1.15);
-}
-
-.btn {
-  @apply transition-all duration-300;
-}
-
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px oklch(var(--bc) / 0.12);
-}
-
-.tabs-boxed .tab {
-  @apply transition-all duration-300;
-}
-
-.tabs-boxed .tab-active {
-  @apply shadow-sm;
-  background-color: oklch(var(--p) / 0.1);
-}
-
-@utility yuno-button {
-  @apply btn transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0;
-}
-
-@utility yuno-input {
-  @apply input w-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30;
+  @apply h-1 rounded-full;
+  background: linear-gradient(
+    90deg,
+    oklch(var(--p)),
+    oklch(var(--s))
+  );
 }
