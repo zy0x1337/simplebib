@@ -10,7 +10,7 @@ interface BookCardProps {
   viewMode: 'grid' | 'list'
 }
 
-// 5 vintage spine palettes — based on book.id % 5
+// 5 vintage spine palettes — pick via simple string hash of book.id
 const SPINE_PALETTES = [
   { bg: '#2d3a2e', text: '#8faf7a' }, // moss green
   { bg: '#3a2820', text: '#c9956a' }, // terracotta
@@ -19,8 +19,12 @@ const SPINE_PALETTES = [
   { bg: '#2a1e2e', text: '#a07ab5' }, // plum
 ] as const
 
-function getSpine(id?: number) {
-  return SPINE_PALETTES[(id ?? 0) % 5]
+function getSpine(id?: string) {
+  if (!id) return SPINE_PALETTES[0]
+  // Simple, fast string hash for palette selection
+  let hash = 0
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  return SPINE_PALETTES[hash % SPINE_PALETTES.length]
 }
 
 function StarRow({ rating }: { rating?: number }) {
@@ -45,7 +49,7 @@ const STATUS = {
   finished: { cls: 'status-finished', label: 'Gelesen'   },
 } as const
 
-function CoverPlaceholder({ title, bookId }: { title: string; bookId?: number }) {
+function CoverPlaceholder({ title, bookId }: { title: string; bookId?: string }) {
   const spine = getSpine(bookId)
   return (
     <div
@@ -80,7 +84,7 @@ export function BookCard({ book, viewMode }: BookCardProps) {
 
   const status = STATUS[book.status]
 
-  /* ── LIST VIEW ─────────────────────────────────────────────── */
+  /* ── LIST VIEW ────────────────────────────────────────────── */
   if (viewMode === 'list') {
     return (
       <>
@@ -122,7 +126,7 @@ export function BookCard({ book, viewMode }: BookCardProps) {
     )
   }
 
-  /* ── GRID VIEW ─────────────────────────────────────────────── */
+  /* ── GRID VIEW ────────────────────────────────────────────── */
   return (
     <>
       <article
