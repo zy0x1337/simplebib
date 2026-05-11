@@ -10,7 +10,7 @@ import { BookCard } from '@/components/BookCard'
 import { SeriesCard } from '@/components/SeriesCard'
 import { AddBookButton } from '@/components/AddBookButton'
 import { AddSeriesModal } from '@/components/AddSeriesModal'
-import { BookPlus, Library, Search, BookOpen, Plus } from 'lucide-react'
+import { BookPlus, Library, Search, BookOpen, Plus, LibraryBig } from 'lucide-react'
 
 export default function HomePage() {
   const [activeTab, setActiveTab]           = useState<'books' | 'series'>('books')
@@ -22,13 +22,6 @@ export default function HomePage() {
 
   const allBooks  = useLiveQuery(() => db.books.toArray())
   const allSeries = useLiveQuery(() => db.series.toArray())
-
-  // Listen for yuno:add-book from Bottom Nav on mobile
-  useEffect(() => {
-    const handler = () => setIsAddBookOpen(true)
-    document.addEventListener('yuno:add-book', handler)
-    return () => document.removeEventListener('yuno:add-book', handler)
-  }, [])
 
   useEffect(() => {
     if (!allSeries) return
@@ -47,7 +40,15 @@ export default function HomePage() {
     setShowSearch(false)
   }
 
-  /* ── Loading ──────────────────────────────────────────────────── */
+  function handleAddTap() {
+    if (activeTab === 'series') {
+      setIsSeriesModalOpen(true)
+    } else {
+      setIsAddBookOpen(true)
+    }
+  }
+
+  /* ── Loading ────────────────────────────────────────────────── */
   if (!allBooks || !allSeries) {
     return (
       <div style={{
@@ -68,7 +69,7 @@ export default function HomePage() {
     )
   }
 
-  /* ── Empty State ─────────────────────────────────────────────── */
+  /* ── Empty State ──────────────────────────────────────────── */
   if (allBooks.length === 0 && allSeries.length === 0) {
     return (
       <div style={{ minHeight: '100svh', background: 'var(--color-bg)' }} className="anim-fade-in">
@@ -131,7 +132,7 @@ export default function HomePage() {
     )
   }
 
-  /* ── Main View ─────────────────────────────────────────────── */
+  /* ── Main View ──────────────────────────────────────────────── */
   return (
     <div style={{ minHeight: '100svh', background: 'var(--color-bg)' }}>
       <Header />
@@ -175,11 +176,7 @@ export default function HomePage() {
         {/* Bücher-Grid */}
         {activeTab === 'books' ? (
           standaloneBooks && standaloneBooks.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 'var(--space-3)',
-            }}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)' }}
               className="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
             >
               {standaloneBooks.map((book, index) => (
@@ -205,11 +202,7 @@ export default function HomePage() {
             </div>
           )
         ) : sortedSeries.length > 0 ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr',
-            gap: 'var(--space-3)',
-          }}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-3)' }}
             className="sm:grid-cols-2 lg:grid-cols-3"
           >
             {sortedSeries.map((series, index) => (
@@ -259,7 +252,6 @@ export default function HomePage() {
             <Library style={{ width: '1.25rem', height: '1.25rem' }} />
           </button>
         )}
-        {/* AddBookButton handles its own modal on desktop */}
         <AddBookButton />
       </div>
 
@@ -292,17 +284,21 @@ export default function HomePage() {
           <span>Reihen</span>
         </button>
 
+        {/* Kontextueller Hinzufügen-Button */}
         <button
           className="bottom-nav-item"
-          onClick={() => setIsAddBookOpen(true)}
-          aria-label="Buch hinzufügen"
+          onClick={handleAddTap}
+          aria-label={activeTab === 'series' ? 'Reihe hinzufügen' : 'Buch hinzufügen'}
         >
-          <BookPlus style={{ width: '1.25rem', height: '1.25rem' }} />
+          {activeTab === 'series'
+            ? <LibraryBig style={{ width: '1.25rem', height: '1.25rem' }} />
+            : <BookPlus   style={{ width: '1.25rem', height: '1.25rem' }} />
+          }
           <span>Hinzufügen</span>
         </button>
       </nav>
 
-      {/* Modals — page-level so they work on all views */}
+      {/* Modals */}
       <AddBookModal isOpen={isAddBookOpen} onClose={() => setIsAddBookOpen(false)} />
       <AddSeriesModal isOpen={isSeriesModalOpen} onClose={() => setIsSeriesModalOpen(false)} />
     </div>
