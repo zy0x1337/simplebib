@@ -16,26 +16,28 @@ interface SeriesDetailsModalProps {
 function MiniStars({ rating }: { rating?: number }) {
   if (!rating) return null
   return (
-    <div className="flex gap-0.5">
+    <div style={{ display: 'flex', gap: '0.125rem' }}>
       {Array.from({ length: 5 }, (_, i) => {
         const n = i + 1
+        const color = rating >= n - 0.5 ? 'var(--color-star)' : 'var(--color-text-faint)'
+        const fill  = rating >= n ? 'var(--color-star)' : 'none'
         return rating >= n
-          ? <Star key={n} className="w-3 h-3 fill-warning text-warning" />
+          ? <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill }} />
           : rating >= n - 0.5
-          ? <StarHalf key={n} className="w-3 h-3 fill-warning text-warning" />
-          : <Star key={n} className="w-3 h-3 text-base-content/15" />
+          ? <StarHalf key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill: 'var(--color-star)' }} />
+          : <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill: 'none' }} />
       })}
     </div>
   )
 }
 
 export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsModalProps) {
-  const [isAddBookOpen, setIsAddBookOpen]   = useState(false)
-  const [selectedBook, setSelectedBook]     = useState<Book | null>(null)
-  const [isEditingName, setIsEditingName]   = useState(false)
-  const [editedName, setEditedName]         = useState(series.name)
-  const [isDeleting, setIsDeleting]         = useState(false)
-  const [isSavingName, setIsSavingName]     = useState(false)
+  const [isAddBookOpen, setIsAddBookOpen] = useState(false)
+  const [selectedBook, setSelectedBook]   = useState<Book | null>(null)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editedName, setEditedName]       = useState(series.name)
+  const [isDeleting, setIsDeleting]       = useState(false)
+  const [isSavingName, setIsSavingName]   = useState(false)
 
   const booksInSeries = useLiveQuery(
     () => db.books.where('seriesId').equals(series.id!).toArray()
@@ -53,7 +55,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Buchreihe „${series.name}“ wirklich löschen?\nBücher bleiben erhalten.`)) return
+    if (!confirm(`Buchreihe „${series.name}" wirklich löschen?\nBücher bleiben erhalten.`)) return
     setIsDeleting(true)
     try {
       const books = await db.books.where('seriesId').equals(series.id!).toArray()
@@ -78,145 +80,244 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length ?? 0
   const readingBooks  = booksInSeries?.filter(b => b.status === 'reading').length  ?? 0
 
+  // When a sub-modal is open, hide (not unmount) this modal so there's no z-index conflict
+  const isSubModalOpen = isAddBookOpen || !!selectedBook
+  const hiddenStyle: React.CSSProperties = isSubModalOpen
+    ? { visibility: 'hidden', pointerEvents: 'none' }
+    : {}
+
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div className="absolute inset-0 bg-base-content/30 backdrop-blur-sm anim-fade-in" onClick={onClose} />
-
-        <div className="modal-panel relative w-full sm:max-w-lg max-h-[94dvh]
-                        overflow-y-auto rounded-t-2xl sm:rounded-lg anim-modal">
-
-          {/* Handle */}
-          <div className="sm:hidden flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full bg-base-content/20" />
+      {/* ── SeriesDetails panel ───────────────────────────────────────── */}
+      <div
+        className="modal-overlay anim-fade-in"
+        style={{ ...hiddenStyle }}
+        onClick={onClose}
+      >
+        <div
+          className="modal-box anim-modal-in"
+          onClick={e => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="series-details-title"
+        >
+          {/* Mobile handle */}
+          <div className="sm:hidden" style={{ display: 'flex', justifyContent: 'center', paddingBottom: 'var(--space-2)' }}>
+            <div style={{
+              width: '2.5rem', height: '0.25rem',
+              borderRadius: 'var(--radius-full)',
+              background: 'var(--color-border)',
+            }} />
           </div>
 
           {/* Header */}
-          <div className="flex items-start gap-3 px-5 pt-4 pb-3">
-            {/* Buchanzahl-Block */}
-            <div className="flex-shrink-0 w-12 text-center pt-0.5">
-              <span className="font-display text-3xl font-bold leading-none text-primary">
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
+            padding: 'var(--space-1) 0 var(--space-3)',
+          }}>
+            {/* Book count */}
+            <div style={{ flexShrink: 0, width: '3rem', textAlign: 'center', paddingTop: '0.125rem' }}>
+              <span style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-2xl)',
+                fontWeight: 700,
+                lineHeight: 1,
+                color: 'var(--color-accent)',
+              }}>
                 {totalBooks}
               </span>
-              <p className="label-caps mt-0.5">{totalBooks === 1 ? 'Buch' : 'Bücher'}</p>
+              <p style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                letterSpacing: 'var(--tracking-widest)',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-muted)',
+                marginTop: '0.125rem',
+              }}>
+                {totalBooks === 1 ? 'Buch' : 'Bücher'}
+              </p>
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div style={{ flex: 1, minWidth: 0 }}>
               {isEditingName ? (
-                <div className="flex items-center gap-2">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                   <input
-                    className="bib-input text-base font-semibold flex-1"
+                    className="input"
+                    style={{ flex: 1, fontWeight: 600 }}
                     value={editedName}
                     onChange={e => setEditedName(e.target.value)}
                     autoFocus
                     disabled={isSavingName}
                   />
-                  <button onClick={handleSaveName} disabled={isSavingName}
-                    className="w-8 h-8 flex items-center justify-center rounded-md
-                               text-primary hover:bg-primary/8 transition-colors">
-                    <Save className="w-4 h-4" />
+                  <button
+                    onClick={handleSaveName}
+                    disabled={isSavingName}
+                    className="btn btn-icon btn-ghost"
+                    aria-label="Speichern"
+                    style={{ color: 'var(--color-accent)' }}
+                  >
+                    <Save style={{ width: '1rem', height: '1rem' }} />
                   </button>
-                  <button onClick={() => { setIsEditingName(false); setEditedName(series.name) }}
-                    className="w-8 h-8 flex items-center justify-center rounded-md
-                               text-base-content/40 hover:bg-base-content/6 transition-colors">
-                    <X className="w-4 h-4" />
+                  <button
+                    onClick={() => { setIsEditingName(false); setEditedName(series.name) }}
+                    className="btn btn-icon btn-ghost"
+                    aria-label="Abbrechen"
+                  >
+                    <X style={{ width: '1rem', height: '1rem' }} />
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5">
-                  <h2 className="font-display text-lg font-semibold leading-snug truncate">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                  <h2
+                    id="series-details-title"
+                    style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'var(--text-lg)',
+                      fontWeight: 400,
+                      fontStyle: 'italic',
+                      letterSpacing: 'var(--tracking-tight)',
+                      color: 'var(--color-text)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      lineHeight: 'var(--leading-snug)',
+                    }}
+                  >
                     {series.name}
                   </h2>
                   <button
                     onClick={() => setIsEditingName(true)}
-                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md
-                               text-base-content/30 hover:text-primary hover:bg-primary/8
-                               transition-colors"
+                    className="btn btn-icon btn-ghost"
                     aria-label="Name bearbeiten"
+                    style={{ flexShrink: 0 }}
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
+                    <Edit2 style={{ width: '0.875rem', height: '0.875rem' }} />
                   </button>
                 </div>
               )}
 
-              {/* Fortschritts-Segmente */}
+              {/* Progress segments */}
               {totalBooks > 0 && (
-                <div className="mt-2 flex gap-0.5 h-1">
+                <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: '0.125rem', height: '0.25rem' }}>
                   {Array.from({ length: totalBooks }, (_, i) => {
                     const idx = i + 1
-                    let bg = 'bg-base-300'
-                    if (idx <= finishedBooks) bg = 'bg-primary'
-                    else if (idx <= finishedBooks + readingBooks) bg = 'bg-secondary/60'
-                    return <div key={i} className={`flex-1 rounded-full ${bg}`} />
+                    const bg = idx <= finishedBooks
+                      ? 'var(--color-accent)'
+                      : idx <= finishedBooks + readingBooks
+                      ? 'var(--color-reading)'
+                      : 'var(--color-border)'
+                    return (
+                      <div key={i} style={{
+                        flex: 1,
+                        borderRadius: 'var(--radius-full)',
+                        background: bg,
+                        transition: 'background var(--transition)',
+                      }} />
+                    )
                   })}
                 </div>
               )}
             </div>
 
-            <button onClick={onClose}
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md
-                         text-base-content/40 hover:text-base-content hover:bg-base-content/6
-                         transition-colors mt-0.5"
-              aria-label="Schließen">
-              <X className="w-4 h-4" />
+            <button
+              onClick={onClose}
+              className="btn btn-icon btn-ghost"
+              style={{ flexShrink: 0, marginTop: '0.125rem' }}
+              aria-label="Schließen"
+            >
+              <X style={{ width: '1rem', height: '1rem' }} />
             </button>
           </div>
 
-          <div className="bib-divider mx-5" />
+          <div style={{ height: '1px', background: 'var(--color-divider)', margin: '0 0 var(--space-2)' }} />
 
-          {/* Bücher-Liste */}
-          <div className="px-2 py-2">
+          {/* Book list */}
+          <div style={{ padding: 'var(--space-1) 0' }}>
             {!booksInSeries || booksInSeries.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-base-content/40">
-                <BookOpen className="w-8 h-8" />
-                <p className="text-sm">Noch keine Bücher in dieser Reihe</p>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 'var(--space-2)', padding: 'var(--space-10) 0',
+                color: 'var(--color-text-faint)',
+              }}>
+                <BookOpen style={{ width: '2rem', height: '2rem' }} />
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)' }}>
+                  Noch keine Bücher in dieser Reihe
+                </p>
               </div>
             ) : (
               booksInSeries.map((book, idx) => (
                 <button
                   key={book.id}
                   onClick={() => setSelectedBook(book)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
-                             hover:bg-base-content/4 transition-colors text-left group
-                             anim-fade-up"
-                  style={{ animationDelay: `${idx * 0.04}s` }}
+                  className="anim-fade-up"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                    width: '100%',
+                    padding: 'var(--space-2) var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background var(--transition)',
+                    animationDelay: `${idx * 0.04}s`,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'oklch(from var(--color-text) l c h / 0.04)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  {/* Bandnummer */}
-                  <div className="flex-shrink-0 w-6 text-center">
-                    <span className="font-display text-base font-bold text-primary/50
-                                     group-hover:text-primary transition-colors">
+                  {/* Band number */}
+                  <div style={{ flexShrink: 0, width: '1.5rem', textAlign: 'center' }}>
+                    <span style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'var(--text-base)',
+                      fontWeight: 700,
+                      color: 'oklch(from var(--color-accent) l c h / 0.5)',
+                    }}>
                       {book.seriesPosition ?? '–'}
                     </span>
                   </div>
 
-                  {/* Mini-Cover */}
-                  <div className="flex-shrink-0 w-8 h-12 rounded overflow-hidden bg-base-300">
+                  {/* Mini cover */}
+                  <div style={{
+                    flexShrink: 0, width: '2rem', height: '3rem',
+                    borderRadius: 'var(--radius-sm)',
+                    overflow: 'hidden',
+                    background: 'var(--color-surface-2)',
+                  }}>
                     {book.coverBlob || book.coverUrl ? (
                       <img
-                        src={book.coverBlob
-                          ? URL.createObjectURL(book.coverBlob)
-                          : book.coverUrl!}
+                        src={book.coverBlob ? URL.createObjectURL(book.coverBlob) : book.coverUrl!}
                         alt={book.title}
-                        className="w-full h-full object-cover"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-3 h-3 text-base-content/25" />
+                      <div style={{
+                        width: '100%', height: '100%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <BookOpen style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-faint)' }} />
                       </div>
                     )}
                   </div>
 
                   {/* Text */}
-                  <div className="flex-1 min-w-0">
-                    <p className="card-title-serif text-sm truncate
-                                  group-hover:text-primary transition-colors">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'var(--text-sm)',
+                      fontStyle: 'italic',
+                      color: 'var(--color-text)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      lineHeight: 'var(--leading-snug)',
+                    }}>
                       {book.title}
                     </p>
                     <MiniStars rating={book.rating} />
                   </div>
 
-                  {/* Status-Chip */}
+                  {/* Status chip */}
                   <span className={STATUS_CLS[book.status]}>
                     {STATUS_LABEL[book.status]}
                   </span>
@@ -226,44 +327,61 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
           </div>
 
           {/* Footer */}
-          <div className="bib-divider mx-5" />
-          <div className="px-5 py-4 flex items-center justify-between">
+          <div style={{ height: '1px', background: 'var(--color-divider)', margin: 'var(--space-2) 0 0' }} />
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: 'var(--space-4) 0 var(--space-2)',
+          }}>
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm
-                         text-error/70 hover:text-error hover:bg-error/8 transition-colors"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
+                padding: 'var(--space-2) var(--space-3)',
+                borderRadius: 'var(--radius-md)',
+                background: 'none', border: 'none',
+                fontSize: 'var(--text-sm)',
+                color: 'oklch(from var(--color-error) l c h / 0.7)',
+                cursor: isDeleting ? 'not-allowed' : 'pointer',
+                transition: 'color var(--transition), background var(--transition)',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--color-error)'
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'oklch(from var(--color-error) l c h / 0.08)'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.7)'
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
+              }}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 style={{ width: '1rem', height: '1rem' }} />
               {isDeleting ? 'Lösche…' : 'Reihe löschen'}
             </button>
 
             <button
               onClick={() => setIsAddBookOpen(true)}
-              className="btn-bib-primary flex items-center gap-2"
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
             >
-              <Plus className="w-4 h-4" />
+              <Plus style={{ width: '1rem', height: '1rem' }} />
               Buch hinzufügen
             </button>
           </div>
         </div>
       </div>
 
-      {isAddBookOpen && (
-        <AddBookToSeriesModal
-          series={series}
-          isOpen={isAddBookOpen}
-          onClose={() => setIsAddBookOpen(false)}
-        />
-      )}
+      {/* ── Sub-modals — always mounted, controlled via isOpen prop ─── */}
+      <AddBookToSeriesModal
+        series={series}
+        isOpen={isAddBookOpen}
+        onClose={() => setIsAddBookOpen(false)}
+      />
 
-      {selectedBook && (
-        <BookDetailsModal
-          book={selectedBook}
-          isOpen={!!selectedBook}
-          onClose={() => setSelectedBook(null)}
-        />
-      )}
+      <BookDetailsModal
+        book={selectedBook!}
+        isOpen={!!selectedBook}
+        onClose={() => setSelectedBook(null)}
+      />
     </>
   )
 }
