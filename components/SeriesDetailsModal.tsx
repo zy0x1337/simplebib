@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series, Book } from '@/lib/db'
 import { X, Plus, Trash2, BookOpen, Star, StarHalf, Edit2, Save } from 'lucide-react'
@@ -13,18 +13,60 @@ interface SeriesDetailsModalProps {
   onClose: () => void
 }
 
+/** Render a book cover from blob or url without memory leaks */
+function BookCover({ book }: { book: Book }) {
+  const [src, setSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (book.coverType === 'upload' && book.coverBlob) {
+      const url = URL.createObjectURL(book.coverBlob)
+      setSrc(url)
+      return () => URL.revokeObjectURL(url)
+    } else if (book.coverType === 'url' && book.coverUrl) {
+      setSrc(book.coverUrl)
+    } else {
+      setSrc(null)
+    }
+  }, [book.coverBlob, book.coverUrl, book.coverType])
+
+  return (
+    <div style={{
+      flexShrink: 0, width: '2rem', height: '3rem',
+      borderRadius: 'var(--radius-sm)',
+      overflow: 'hidden',
+      background: 'var(--color-surface-2)',
+      border: '1px solid var(--color-border)',
+    }}>
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          loading="lazy"
+        />
+      ) : (
+        <div style={{
+          width: '100%', height: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <BookOpen style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-faint)' }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function MiniStars({ rating }: { rating?: number }) {
   if (!rating) return null
   return (
-    <div style={{ display: 'flex', gap: '0.125rem' }}>
+    <div style={{ display: 'flex', gap: '0.15rem', alignItems: 'center' }}>
       {Array.from({ length: 5 }, (_, i) => {
         const n = i + 1
-        const color = rating >= n - 0.5 ? 'var(--color-star)' : 'var(--color-text-faint)'
-        return rating >= n
-          ? <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill: 'var(--color-star)' }} />
-          : rating >= n - 0.5
-          ? <StarHalf key={n} style={{ width: '0.75rem', height: '0.75rem', color, fill: 'var(--color-star)' }} />
-          : <Star    key={n} style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-faint)', fill: 'none' }} />
+        if (rating >= n)
+          return <Star     key={n} style={{ width: '0.7rem', height: '0.7rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        if (rating >= n - 0.5)
+          return <StarHalf key={n} style={{ width: '0.7rem', height: '0.7rem', fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        return       <Star key={n} style={{ width: '0.7rem', height: '0.7rem', fill: 'none',                color: 'var(--color-border)' }} />
       })}
     </div>
   )
@@ -54,7 +96,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Buchreihe „${series.name}" wirklich löschen?\nBücher bleiben erhalten.`)) return
+    if (!confirm(`Buchreihe \u201e${series.name}\u201c wirklich l\u00f6schen?\nB\u00fccher bleiben erhalten.`)) return
     setIsDeleting(true)
     try {
       const books = await db.books.where('seriesId').equals(series.id!).toArray()
@@ -79,15 +121,14 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length ?? 0
   const readingBooks  = booksInSeries?.filter(b => b.status === 'reading').length  ?? 0
 
-  // When a sub-modal is open, hide (not unmount) this modal so there's no z-index conflict
   const isSubModalOpen = isAddBookOpen || !!selectedBook
   const hiddenStyle: React.CSSProperties = isSubModalOpen
-    ? { visibility: 'hidden' as const, pointerEvents: 'none' as const }
+    ? { visibility: 'hidden', pointerEvents: 'none' }
     : {}
 
   return (
     <>
-      {/* ── SeriesDetails panel ───────────────────────────────────────── */}
+      {/* ── SeriesDetails panel ────────────────────────────────────────── */}
       <div
         className="modal-overlay anim-fade-in"
         style={hiddenStyle}
@@ -95,13 +136,14 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
       >
         <div
           className="modal-box anim-modal-in"
+          style={{ maxWidth: '480px', paddingTop: 'var(--space-4)' }}
           onClick={e => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
           aria-labelledby="series-details-title"
         >
           {/* Mobile handle */}
-          <div className="sm:hidden" style={{ display: 'flex', justifyContent: 'center', paddingBottom: 'var(--space-2)' }}>
+          <div className="sm:hidden" style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--space-3)', marginTop: 'calc(-1 * var(--space-2))' }}>
             <div style={{
               width: '2.5rem', height: '0.25rem',
               borderRadius: 'var(--radius-full)',
@@ -109,13 +151,19 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
             }} />
           </div>
 
-          {/* Header */}
+          {/* ── Header: count + title + rating ───────────────────────── */}
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
             paddingBottom: 'var(--space-3)',
           }}>
-            {/* Book count */}
-            <div style={{ flexShrink: 0, width: '3rem', textAlign: 'center', paddingTop: '0.125rem' }}>
+
+            {/* Book count badge */}
+            <div style={{
+              flexShrink: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              minWidth: '3rem',
+              paddingTop: '0.125rem',
+            }}>
               <span style={{
                 fontFamily: 'var(--font-display)',
                 fontSize: 'var(--text-xl)',
@@ -138,6 +186,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
               </p>
             </div>
 
+            {/* Series name + rating + progress */}
             <div style={{ flex: 1, minWidth: 0 }}>
               {isEditingName ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -194,7 +243,17 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                 </div>
               )}
 
-              {/* Progress segments */}
+              {/* Overall rating */}
+              {(series.overallRating ?? 0) > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+                  <MiniStars rating={series.overallRating} />
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                    Ø {series.overallRating?.toFixed(1)}
+                  </span>
+                </div>
+              )}
+
+              {/* Progress bar segments */}
               {totalBooks > 0 && (
                 <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: '0.125rem', height: '0.25rem' }}>
                   {Array.from({ length: totalBooks }, (_, i) => {
@@ -206,8 +265,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                       : 'var(--color-border)'
                     return (
                       <div key={i} style={{
-                        flex: 1,
-                        borderRadius: 'var(--radius-full)',
+                        flex: 1, borderRadius: 'var(--radius-full)',
                         background: bg,
                         transition: 'background var(--transition)',
                       }} />
@@ -217,6 +275,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
               )}
             </div>
 
+            {/* Close */}
             <button
               onClick={onClose}
               className="btn btn-icon btn-ghost"
@@ -227,10 +286,14 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
             </button>
           </div>
 
-          <div style={{ height: '1px', background: 'var(--color-divider)', marginBottom: 'var(--space-2)' }} />
+          <div style={{ height: '1px', background: 'var(--color-divider)', marginBottom: 'var(--space-1)' }} />
 
-          {/* Book list */}
-          <div style={{ padding: 'var(--space-1) 0' }}>
+          {/* ── Book list (scrollable) ───────────────────────────────── */}
+          <div style={{
+            overflowY: 'auto',
+            maxHeight: '50vh',
+            padding: 'var(--space-1) 0',
+          }}>
             {!booksInSeries || booksInSeries.length === 0 ? (
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -275,32 +338,10 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                     </span>
                   </div>
 
-                  {/* Mini cover */}
-                  <div style={{
-                    flexShrink: 0, width: '2rem', height: '3rem',
-                    borderRadius: 'var(--radius-sm)',
-                    overflow: 'hidden',
-                    background: 'var(--color-surface-2)',
-                  }}>
-                    {book.coverBlob || book.coverUrl ? (
-                      <img
-                        src={book.coverBlob ? URL.createObjectURL(book.coverBlob) : book.coverUrl!}
-                        alt={book.title}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div style={{
-                        width: '100%', height: '100%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'var(--color-surface-2)',
-                      }}>
-                        <BookOpen style={{ width: '0.75rem', height: '0.75rem', color: 'var(--color-text-faint)' }} />
-                      </div>
-                    )}
-                  </div>
+                  {/* Cover */}
+                  <BookCover book={book} />
 
-                  {/* Text */}
+                  {/* Title + stars */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{
                       fontFamily: 'var(--font-display)',
@@ -324,11 +365,11 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
             )}
           </div>
 
-          {/* Footer */}
+          {/* ── Footer ────────────────────────────────────────────────── */}
           <div style={{ height: '1px', background: 'var(--color-divider)', margin: 'var(--space-2) 0 0' }} />
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: 'var(--space-4) 0 var(--space-1)',
+            paddingTop: 'var(--space-3)',
           }}>
             <button
               onClick={handleDelete}
@@ -368,7 +409,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
         </div>
       </div>
 
-      {/* ── Sub-modals — only mount when needed to avoid null-prop crash ── */}
+      {/* ── Sub-modals ───────────────────────────────────────────────── */}
       <AddBookToSeriesModal
         series={series}
         isOpen={isAddBookOpen}
