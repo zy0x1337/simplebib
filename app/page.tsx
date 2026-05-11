@@ -38,14 +38,12 @@ export default function HomePage() {
 
   const standaloneBooks = allBooks?.filter(b => !b.seriesId)
 
-  // Last 6 added books across all books for the home strip
   const recentBooks = allBooks
     ? [...allBooks]
         .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
         .slice(0, 6)
     : []
 
-  // Last 4 series created for the home strip
   const recentSeries = allSeries
     ? [...allSeries]
         .sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime())
@@ -65,7 +63,7 @@ export default function HomePage() {
     }
   }
 
-  /* ── Loading ─────────────────────────────────────────────────── */
+  /* ── Loading ───────────────────────────────────────────────── */
   if (!allBooks || !allSeries) {
     return (
       <div style={{
@@ -86,7 +84,7 @@ export default function HomePage() {
     )
   }
 
-  /* ── Empty State ─────────────────────────────────────────────── */
+  /* ── Empty State ───────────────────────────────────────────── */
   if (allBooks.length === 0 && allSeries.length === 0) {
     return (
       <div style={{ minHeight: '100svh', background: 'var(--color-bg)' }} className="anim-fade-in">
@@ -149,7 +147,7 @@ export default function HomePage() {
     )
   }
 
-  /* ── Main View ───────────────────────────────────────────────── */
+  /* ── Main View ─────────────────────────────────────────────── */
   return (
     <div style={{ minHeight: '100svh', background: 'var(--color-bg)' }}>
       <Header />
@@ -196,10 +194,18 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* ── HOME TAB ─────────────────────────────────────────── */}
+        {/* ── HOME TAB ─────────────────────────────────────── */}
         {activeTab === 'home' && (
-          <div className="anim-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-
+          <div
+            className="anim-fade-in"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-6)',
+              // ensure last section scrolls fully above bottom-nav on mobile
+              paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 8px))',
+            }}
+          >
             {/* Stats */}
             <HomeStats />
 
@@ -249,7 +255,7 @@ export default function HomePage() {
 
             {/* Reihen */}
             {recentSeries.length > 0 && (
-              <section style={{ paddingBottom: 'var(--space-8)' }}>
+              <section>
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   marginBottom: 'var(--space-3)',
@@ -290,11 +296,10 @@ export default function HomePage() {
                 </div>
               </section>
             )}
-
           </div>
         )}
 
-        {/* ── BÜCHER TAB ──────────────────────────────────────── */}
+        {/* ── BÜCHER TAB ──────────────────────────────────── */}
         {activeTab === 'books' && (
           standaloneBooks && standaloneBooks.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)' }}
@@ -324,7 +329,7 @@ export default function HomePage() {
           )
         )}
 
-        {/* ── REIHEN TAB ───────────────────────────────────────── */}
+        {/* ── REIHEN TAB ───────────────────────────────────── */}
         {activeTab === 'series' && (
           sortedSeries.length > 0 ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-3)' }}
