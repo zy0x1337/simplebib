@@ -1,34 +1,65 @@
 'use client'
 
 import { useTheme } from './ThemeProvider'
-import { Sun, Moon, Library } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 
 export function Header() {
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <header className="navbar bg-base-100/80 backdrop-blur-sm shadow-md border-b border-base-300">
-      <div className="flex-1">
-        <div className="flex items-center gap-2 ml-4">
-          <Library className="w-6 h-6 text-primary" />
-          <h1 className="text-2xl font-display font-bold text-base-content">
+    <header className="sticky top-0 z-50 bg-base-100/90 backdrop-blur-md">
+      {/* Hauptzeile */}
+      <div className="flex items-center justify-between px-5 h-14">
+
+        {/* Logo + Titel */}
+        <div className="flex items-center gap-2.5">
+          {/* Buchzeichen-Ornament als inline SVG */}
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 22 22"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect x="3" y="2" width="13" height="18" rx="1.5"
+              stroke="currentColor" strokeWidth="1.4"
+              className="text-primary"
+            />
+            <line x1="3" y1="7" x2="16" y2="7"
+              stroke="currentColor" strokeWidth="1.1"
+              className="text-primary" strokeDasharray="1.5 2"
+            />
+            <path d="M16 5 L19 5 L19 17 L16 14" stroke="currentColor"
+              strokeWidth="1.2" strokeLinejoin="round"
+              className="text-secondary"
+            />
+          </svg>
+
+          <span className="app-title text-xl tracking-tight">
             YunoBib
-          </h1>
+          </span>
         </div>
-      </div>
-      <div className="flex-none">
+
+        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="btn btn-ghost btn-circle hover:bg-base-200 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-md
+                     text-base-content/50 hover:text-base-content
+                     hover:bg-base-content/6
+                     transition-colors duration-200"
           aria-label="Theme wechseln"
         >
           {theme === 'light' ? (
-            <Moon className="w-5 h-5 text-base-content" />
+            <Moon className="w-4.5 h-4.5" />
           ) : (
-            <Sun className="w-5 h-5 text-base-content" />
+            <Sun className="w-4.5 h-4.5" />
           )}
         </button>
       </div>
+
+      {/* Trennlinie — zwei Pixel, zweifarbig für Tiefe */}
+      <div className="h-px bg-base-content/8" />
+      <div className="h-px bg-base-content/4" />
     </header>
   )
 }
