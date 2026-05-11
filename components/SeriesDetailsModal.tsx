@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series, Book } from '@/lib/db'
-import { X, Plus, Trash2, BookOpen, Star, StarHalf, Edit } from 'lucide-react'
+import { X, Plus, Trash2, BookOpen, Star, StarHalf, Edit2, Save } from 'lucide-react'
 import { AddBookToSeriesModal } from './AddBookToSeriesModal'
 import { BookDetailsModal } from './BookDetailsModal'
 
@@ -13,243 +13,242 @@ interface SeriesDetailsModalProps {
   onClose: () => void
 }
 
-export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsModalProps) {
-  const [isAddBookOpen, setIsAddBookOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null)
-  const [isEditingName, setIsEditingName] = useState(false)
-  const [editedName, setEditedName] = useState(series.name)
+function MiniStars({ rating }: { rating?: number }) {
+  if (!rating) return null
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => {
+        const n = i + 1
+        return rating >= n
+          ? <Star key={n} className="w-3 h-3 fill-warning text-warning" />
+          : rating >= n - 0.5
+          ? <StarHalf key={n} className="w-3 h-3 fill-warning text-warning" />
+          : <Star key={n} className="w-3 h-3 text-base-content/15" />
+      })}
+    </div>
+  )
+}
 
-  // Get books in series, sorted by position
+export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsModalProps) {
+  const [isAddBookOpen, setIsAddBookOpen]   = useState(false)
+  const [selectedBook, setSelectedBook]     = useState<Book | null>(null)
+  const [isEditingName, setIsEditingName]   = useState(false)
+  const [editedName, setEditedName]         = useState(series.name)
+  const [isDeleting, setIsDeleting]         = useState(false)
+  const [isSavingName, setIsSavingName]     = useState(false)
+
   const booksInSeries = useLiveQuery(
-    () =>
-      db.books
-        .where('seriesId')
-        .equals(series.id!)
-        .toArray()
-        .then((books) => books.sort((a, b) => (a.seriesPosition || 0) - (b.seriesPosition || 0))),
+    () => db.books.where('seriesId').equals(series.id!).toArray()
+          .then(books => books.sort((a, b) => (a.seriesPosition || 0) - (b.seriesPosition || 0))),
     [series.id]
   )
 
-  // Render Stars
-  const renderStars = (rating?: number) => {
-    if (!rating) return null
-    const stars = []
-    for (let i = 1; i <= 5; i++) {
-      const isFilled = rating >= i
-      const isHalf = rating >= i - 0.5 && rating < i
-      
-      if (isFilled) {
-        stars.push(<Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)
-      } else if (isHalf) {
-        stars.push(<StarHalf key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)
-      } else {
-        stars.push(<Star key={i} className="w-4 h-4 text-gray-300" />)
-      }
-    }
-    return <div className="flex gap-0.5">{stars}</div>
-  }
-
-  // Get status badge
-  const getStatusBadge = (status: 'unread' | 'reading' | 'finished') => {
-    const badges = {
-      unread: <span className="badge badge-ghost badge-sm">Ungelesen</span>,
-      reading: <span className="badge badge-info badge-sm">Lese ich</span>,
-      finished: <span className="badge badge-success badge-sm">Gelesen</span>,
-    }
-    return badges[status]
-  }
-
-  // Save edited name
   const handleSaveName = async () => {
-    if (editedName.trim() && editedName !== series.name) {
+    if (!editedName.trim()) return
+    setIsSavingName(true)
+    try {
       await db.series.update(series.id!, { name: editedName.trim() })
-    }
-    setIsEditingName(false)
+      setIsEditingName(false)
+    } finally { setIsSavingName(false) }
   }
 
-  // Delete Series
   const handleDelete = async () => {
-    if (
-      !confirm(
-        `Buchreihe "${series.name}" wirklich löschen?\n\nDie Bücher bleiben erhalten, werden aber aus der Serie entfernt.`
-      )
-    ) {
-      return
-    }
-
+    if (!confirm(`Buchreihe „${series.name}“ wirklich löschen?\nBücher bleiben erhalten.`)) return
     setIsDeleting(true)
     try {
       const books = await db.books.where('seriesId').equals(series.id!).toArray()
-      for (const book of books) {
-        await db.books.update(book.id!, {
-          seriesId: undefined,
-          seriesPosition: undefined,
-        })
-      }
+      await Promise.all(books.map(b =>
+        db.books.update(b.id!, { seriesId: undefined, seriesPosition: undefined })
+      ))
       await db.series.delete(series.id!)
       onClose()
-    } catch (error) {
-      console.error('Failed to delete series:', error)
-      alert('Fehler beim Löschen der Buchreihe')
-    } finally {
-      setIsDeleting(false)
-    }
+    } finally { setIsDeleting(false) }
+  }
+
+  const STATUS_CLS: Record<string, string> = {
+    unread: 'status-unread', reading: 'status-reading', finished: 'status-finished',
+  }
+  const STATUS_LABEL: Record<string, string> = {
+    unread: 'Ungelesen', reading: 'Lese ich', finished: 'Gelesen',
   }
 
   if (!isOpen) return null
 
+  const totalBooks    = booksInSeries?.length ?? 0
+  const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length ?? 0
+  const readingBooks  = booksInSeries?.filter(b => b.status === 'reading').length  ?? 0
+
   return (
     <>
-      <div className="modal modal-open">
-        <div className="modal-box max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="absolute inset-0 bg-base-content/30 backdrop-blur-sm anim-fade-in" onClick={onClose} />
+
+        <div className="modal-panel relative w-full sm:max-w-lg max-h-[94dvh]
+                        overflow-y-auto rounded-t-2xl sm:rounded-lg anim-modal">
+
+          {/* Handle */}
+          <div className="sm:hidden flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-base-content/20" />
+          </div>
+
           {/* Header */}
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex-1">
+          <div className="flex items-start gap-3 px-5 pt-4 pb-3">
+            {/* Buchanzahl-Block */}
+            <div className="flex-shrink-0 w-12 text-center pt-0.5">
+              <span className="font-display text-3xl font-bold leading-none text-primary">
+                {totalBooks}
+              </span>
+              <p className="label-caps mt-0.5">{totalBooks === 1 ? 'Buch' : 'Bücher'}</p>
+            </div>
+
+            <div className="flex-1 min-w-0">
               {isEditingName ? (
                 <div className="flex items-center gap-2">
                   <input
-                    type="text"
+                    className="bib-input text-base font-semibold flex-1"
                     value={editedName}
-                    onChange={(e) => setEditedName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveName()
-                      if (e.key === 'Escape') {
-                        setEditedName(series.name)
-                        setIsEditingName(false)
-                      }
-                    }}
-                    className="input input-bordered input-sm font-bold text-xl flex-1"
+                    onChange={e => setEditedName(e.target.value)}
                     autoFocus
+                    disabled={isSavingName}
                   />
-                  <button
-                    className="btn btn-sm btn-primary"
-                    onClick={handleSaveName}
-                  >
-                    Speichern
+                  <button onClick={handleSaveName} disabled={isSavingName}
+                    className="w-8 h-8 flex items-center justify-center rounded-md
+                               text-primary hover:bg-primary/8 transition-colors">
+                    <Save className="w-4 h-4" />
                   </button>
-                  <button
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => {
-                      setEditedName(series.name)
-                      setIsEditingName(false)
-                    }}
-                  >
-                    Abbrechen
+                  <button onClick={() => { setIsEditingName(false); setEditedName(series.name) }}
+                    className="w-8 h-8 flex items-center justify-center rounded-md
+                               text-base-content/40 hover:bg-base-content/6 transition-colors">
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-2xl">{series.name}</h3>
+                <div className="flex items-center gap-1.5">
+                  <h2 className="font-display text-lg font-semibold leading-snug truncate">
+                    {series.name}
+                  </h2>
                   <button
-                    className="btn btn-ghost btn-circle btn-xs"
                     onClick={() => setIsEditingName(true)}
-                    aria-label="Namen bearbeiten"
+                    className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md
+                               text-base-content/30 hover:text-primary hover:bg-primary/8
+                               transition-colors"
+                    aria-label="Name bearbeiten"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
-              <div className="flex items-center gap-3 mt-2 text-sm text-base-content/60">
-                <span>{booksInSeries?.length || 0} {booksInSeries?.length === 1 ? 'Buch' : 'Bücher'}</span>
-                {series.overallRating && series.overallRating > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium text-base-content">{series.overallRating.toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
+
+              {/* Fortschritts-Segmente */}
+              {totalBooks > 0 && (
+                <div className="mt-2 flex gap-0.5 h-1">
+                  {Array.from({ length: totalBooks }, (_, i) => {
+                    const idx = i + 1
+                    let bg = 'bg-base-300'
+                    if (idx <= finishedBooks) bg = 'bg-primary'
+                    else if (idx <= finishedBooks + readingBooks) bg = 'bg-secondary/60'
+                    return <div key={i} className={`flex-1 rounded-full ${bg}`} />
+                  })}
+                </div>
+              )}
             </div>
-            <button
-              className="btn btn-sm btn-circle btn-ghost"
-              onClick={onClose}
-              aria-label="Modal schließen"
-            >
-              <X className="w-5 h-5" />
+
+            <button onClick={onClose}
+              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md
+                         text-base-content/40 hover:text-base-content hover:bg-base-content/6
+                         transition-colors mt-0.5"
+              aria-label="Schließen">
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Books List */}
-          {booksInSeries && booksInSeries.length > 0 ? (
-            <div className="space-y-2">
-              {booksInSeries.map((book) => (
-                <div
+          <div className="bib-divider mx-5" />
+
+          {/* Bücher-Liste */}
+          <div className="px-2 py-2">
+            {!booksInSeries || booksInSeries.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-10 text-base-content/40">
+                <BookOpen className="w-8 h-8" />
+                <p className="text-sm">Noch keine Bücher in dieser Reihe</p>
+              </div>
+            ) : (
+              booksInSeries.map((book, idx) => (
+                <button
                   key={book.id}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-base-200 cursor-pointer transition-colors"
                   onClick={() => setSelectedBook(book)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                             hover:bg-base-content/4 transition-colors text-left group
+                             anim-fade-up"
+                  style={{ animationDelay: `${idx * 0.04}s` }}
                 >
-                  {/* Position Badge */}
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                    {book.seriesPosition}
+                  {/* Bandnummer */}
+                  <div className="flex-shrink-0 w-6 text-center">
+                    <span className="font-display text-base font-bold text-primary/50
+                                     group-hover:text-primary transition-colors">
+                      {book.seriesPosition ?? '–'}
+                    </span>
                   </div>
 
-                  {/* Cover Thumbnail */}
-                  <div className="flex-shrink-0 w-12 h-16 rounded overflow-hidden bg-base-300">
-                    {book.coverType === 'upload' && book.coverBlob ? (
+                  {/* Mini-Cover */}
+                  <div className="flex-shrink-0 w-8 h-12 rounded overflow-hidden bg-base-300">
+                    {book.coverBlob || book.coverUrl ? (
                       <img
-                        src={URL.createObjectURL(book.coverBlob)}
+                        src={book.coverBlob
+                          ? URL.createObjectURL(book.coverBlob)
+                          : book.coverUrl!}
                         alt={book.title}
                         className="w-full h-full object-cover"
-                      />
-                    ) : book.coverType === 'url' && book.coverUrl ? (
-                      <img
-                        src={book.coverUrl}
-                        alt={book.title}
-                        className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-base-content/20" />
+                        <BookOpen className="w-3 h-3 text-base-content/25" />
                       </div>
                     )}
                   </div>
 
-                  {/* Book Info */}
+                  {/* Text */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm truncate">{book.title}</h4>
-                    <p className="text-xs text-base-content/60 truncate">{book.author}</p>
-                    {book.rating && book.rating > 0 && (
-                      <div className="mt-1">{renderStars(book.rating)}</div>
-                    )}
+                    <p className="card-title-serif text-sm truncate
+                                  group-hover:text-primary transition-colors">
+                      {book.title}
+                    </p>
+                    <MiniStars rating={book.rating} />
                   </div>
 
-                  {/* Status Badge */}
-                  <div className="flex-shrink-0">
-                    {getStatusBadge(book.status)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <BookOpen className="w-16 h-16 mx-auto text-base-content/20 mb-4" />
-              <p className="text-base-content/60">Noch keine Bücher in dieser Reihe</p>
-            </div>
-          )}
+                  {/* Status-Chip */}
+                  <span className={STATUS_CLS[book.status]}>
+                    {STATUS_LABEL[book.status]}
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
 
-          {/* Actions */}
-          <div className="modal-action">
+          {/* Footer */}
+          <div className="bib-divider mx-5" />
+          <div className="px-5 py-4 flex items-center justify-between">
             <button
-              className="btn btn-error"
               onClick={handleDelete}
               disabled={isDeleting}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm
+                         text-error/70 hover:text-error hover:bg-error/8 transition-colors"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {isDeleting ? 'Löscht...' : 'Reihe löschen'}
+              <Trash2 className="w-4 h-4" />
+              {isDeleting ? 'Lösche…' : 'Reihe löschen'}
             </button>
+
             <button
-              className="btn btn-primary"
               onClick={() => setIsAddBookOpen(true)}
+              className="btn-bib-primary flex items-center gap-2"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4" />
               Buch hinzufügen
             </button>
           </div>
         </div>
-        <div className="modal-backdrop" onClick={onClose}></div>
       </div>
 
-      {/* Add Book to Series Modal */}
       {isAddBookOpen && (
         <AddBookToSeriesModal
           series={series}
@@ -258,11 +257,10 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
         />
       )}
 
-      {/* Book Details Modal */}
       {selectedBook && (
         <BookDetailsModal
           book={selectedBook}
-          isOpen={true}
+          isOpen={!!selectedBook}
           onClose={() => setSelectedBook(null)}
         />
       )}
