@@ -1,12 +1,8 @@
-// PWA-Pattern: Add Series Modal
-// TypeScript Strict Mode
-// Einfache Serie-Erstellung
-
 'use client'
 
 import { useState } from 'react'
 import { db, Series } from '@/lib/db'
-import { X } from 'lucide-react'
+import { X, BookMarked } from 'lucide-react'
 
 interface AddSeriesModalProps {
   isOpen: boolean
@@ -14,35 +10,23 @@ interface AddSeriesModalProps {
 }
 
 export function AddSeriesModal({ isOpen, onClose }: AddSeriesModalProps) {
-  const [name, setName] = useState('')
-  const [totalBooks, setTotalBooks] = useState(1)
+  const [name, setName]         = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!name.trim()) {
-      alert('Name ist ein Pflichtfeld')
-      return
-    }
-
+    if (!name.trim()) return
     setIsLoading(true)
     try {
       const newSeries: Omit<Series, 'id'> = {
-        name: name.trim(),
-        totalBooks,
+        name:        name.trim(),
+        totalBooks:  0,
         dateCreated: new Date(),
       }
-
       await db.series.add(newSeries as Series)
-      
-      // Reset Form
       setName('')
-      setTotalBooks(1)
-      
       onClose()
-    } catch (error) {
-      console.error('Failed to add series:', error)
+    } catch {
       alert('Fehler beim Erstellen der Buchreihe')
     } finally {
       setIsLoading(false)
@@ -52,65 +36,75 @@ export function AddSeriesModal({ isOpen, onClose }: AddSeriesModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-md">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-base-content/30 backdrop-blur-sm anim-fade-in"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="modal-panel relative w-full sm:max-w-sm
+                      rounded-t-2xl sm:rounded-lg">
+
+        {/* Handle (mobile) */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-base-content/20" />
+        </div>
+
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">Neue Buchreihe erstellen</h3>
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <div className="flex items-center gap-2.5">
+            <BookMarked className="w-4 h-4 text-primary" />
+            <h2 className="font-display text-lg font-semibold">Neue Buchreihe</h2>
+          </div>
           <button
-            className="btn btn-sm btn-circle btn-ghost"
             onClick={onClose}
             disabled={isLoading}
+            className="w-8 h-8 flex items-center justify-center rounded-md
+                       text-base-content/40 hover:text-base-content hover:bg-base-content/6
+                       transition-colors"
+            aria-label="Schließen"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          {/* Series Name */}
-          <div className="form-control mb-4">
-            <label className="label">
-              <span className="label-text">Name der Buchreihe *</span>
-            </label>
+        <div className="bib-divider mx-5" />
+
+        <form onSubmit={handleSubmit} className="px-5 pt-4 pb-6 flex flex-col gap-4">
+
+          <div className="flex flex-col gap-1.5">
+            <label className="label-caps">Name der Reihe *</label>
             <input
-              type="text"
-              className="input input-bordered w-full"
+              className="bib-input"
+              placeholder="z. B. Herr der Ringe"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="z.B. Herr der Ringe"
+              onChange={e => setName(e.target.value)}
               required
+              autoFocus
+              disabled={isLoading}
             />
           </div>
 
-          {/* Actions */}
-          <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={onClose}
-              disabled={isLoading}
-            >
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} disabled={isLoading}
+              className="btn-bib-ghost flex-1">
               Abbrechen
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
               disabled={isLoading || !name.trim()}
+              className="btn-bib-primary flex-1"
             >
-              {isLoading ? (
-                <>
-                  <span className="loading loading-spinner loading-sm mr-2"></span>
-                  Erstelle...
-                </>
-              ) : (
-                'Erstellen'
-              )}
+              {isLoading
+                ? <span className="loading loading-spinner loading-xs" />
+                : 'Erstellen'
+              }
             </button>
           </div>
         </form>
       </div>
-      <div className="modal-backdrop" onClick={onClose}></div>
     </div>
   )
 }
