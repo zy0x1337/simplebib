@@ -1,21 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Playfair_Display, Lora } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-})
-
-const lora = Lora({
-  subsets: ['latin'],
-  variable: '--font-body',
-  weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
-})
 
 export const metadata: Metadata = {
   title: 'YunoBib — Dein Buchjournal',
@@ -31,10 +16,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  // maximumScale entfernt — blockiert Android-Pinch-Zoom (Accessibility)
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5f0e8' },
-    { media: '(prefers-color-scheme: dark)',  color: '#1a1814' },
+    { media: '(prefers-color-scheme: light)', color: '#f5f2ee' },
+    { media: '(prefers-color-scheme: dark)',  color: '#0e0c0b' },
   ],
 }
 
@@ -47,12 +31,22 @@ export default function RootLayout({
     <html
       lang="de"
       suppressHydrationWarning
-      className={`${playfair.variable} ${lora.variable}`}
     >
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
+        {/* Zodiak (display) + General Sans (body) — Fontshare */}
+        <link
+          href="https://api.fontshare.com/v2/css?f[]=zodiak@300,300i,400,400i,500,700&f[]=general-sans@300,400,500,600&display=swap"
+          rel="stylesheet"
+        />
+        <style dangerouslySetInnerHTML={{ __html: `
+          :root {
+            --font-display: 'Zodiak';
+            --font-body: 'General Sans';
+          }
+        ` }} />
       </head>
-      <body className="antialiased">
+      <body>
         <ThemeProvider>
           {children}
         </ThemeProvider>
