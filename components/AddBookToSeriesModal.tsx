@@ -124,7 +124,7 @@ export function AddBookToSeriesModal({ series, isOpen, onClose }: AddBookToSerie
   }
 
   const handleSubmit = async () => {
-    if (!selectedBookId) { setError('Bitte w\u00e4hle ein Buch aus'); return }
+    if (!selectedBookId) { setError('Bitte wähle ein Buch aus'); return }
     setIsLoading(true)
     setError(null)
     try {
@@ -137,7 +137,7 @@ export function AddBookToSeriesModal({ series, isOpen, onClose }: AddBookToSerie
       setSearchQuery('')
       onClose()
     } catch {
-      setError('Fehler beim Hinzuf\u00fcgen')
+      setError('Fehler beim Hinzufügen')
     } finally {
       setIsLoading(false)
     }
@@ -173,7 +173,7 @@ export function AddBookToSeriesModal({ series, isOpen, onClose }: AddBookToSerie
                 color: 'var(--color-text)',
                 lineHeight: 'var(--leading-snug)',
               }}>
-                Buch hinzuf\u00fcgen
+                Buch hinzufügen
               </h2>
               <p style={{
                 fontSize: 'var(--text-xs)',
@@ -188,7 +188,7 @@ export function AddBookToSeriesModal({ series, isOpen, onClose }: AddBookToSerie
               </p>
             </div>
             <button onClick={onClose} disabled={isLoading}
-              className="btn btn-icon btn-ghost" aria-label="Schlie\u00dfen" style={{ flexShrink: 0 }}>
+              className="btn btn-icon btn-ghost" aria-label="Schließen" style={{ flexShrink: 0 }}>
               <X style={{ width: '1rem', height: '1rem' }} />
             </button>
           </div>
@@ -224,7 +224,7 @@ export function AddBookToSeriesModal({ series, isOpen, onClose }: AddBookToSerie
               type="text"
               className="input"
               style={{ paddingLeft: '2.25rem' }}
-              placeholder="Buch suchen\u2026"
+              placeholder="Buch suchen…"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               autoFocus
@@ -250,7 +250,7 @@ export function AddBookToSeriesModal({ series, isOpen, onClose }: AddBookToSerie
               }}>
                 <BookOpen style={{ width: '1.5rem', height: '1.5rem' }} />
                 <p style={{ fontSize: 'var(--text-sm)', textAlign: 'center' }}>
-                  {searchQuery ? 'Keine passenden B\u00fccher' : 'Alle B\u00fccher bereits in einer Reihe'}
+                  {searchQuery ? 'Keine passenden Bücher' : 'Alle Bücher bereits in einer Reihe'}
                 </p>
               </div>
             ) : (
@@ -369,7 +369,7 @@ export function AddBookToSeriesModal({ series, isOpen, onClose }: AddBookToSerie
               opacity: !selectedBookId ? 0.45 : 1,
             }}>
             {isLoading ? <Spinner /> : null}
-            Hinzuf\u00fcgen
+            Hinzufügen
           </button>
         </div>
       </div>
