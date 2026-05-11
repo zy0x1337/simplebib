@@ -7,26 +7,34 @@ interface BookSearchProps {
   onBookSelect: (book: { title: string; authors: string; coverUrl: string }) => void
 }
 
+// Retry NUR bei 503 (Server temporarily unavailable).
+// 429 wird NICHT retried — Google Books gibt 429 auch ohne echtes Rate-Limit
+// zurück wenn kein API-Key gesetzt ist; weiteres Warten hilft nicht.
 async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+  let lastRes: Response | null = null
+
   for (let i = 0; i < maxRetries; i++) {
     const res = await fetch(url)
-    if (res.status === 503 || res.status === 429) {
-      if (i < maxRetries - 1) {
-        await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000))
-        continue
-      }
+
+    if (res.status === 503 && i < maxRetries - 1) {
+      lastRes = res
+      await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000))
+      continue
     }
+
+    // 200, 400, 429 und alles andere: sofort zurückgeben
     return res
   }
-  return fetch(url)
+
+  return lastRes!
 }
 
 export function BookSearch({ onBookSelect }: BookSearchProps) {
-  const [query, setQuery]               = useState('')
-  const [isLoading, setIsLoading]       = useState(false)
-  const [results, setResults]           = useState<any[]>([])
-  const [showResults, setShowResults]   = useState(false)
-  const [error, setError]               = useState<string | null>(null)
+  const [query, setQuery]             = useState('')
+  const [isLoading, setIsLoading]     = useState(false)
+  const [results, setResults]         = useState<any[]>([])
+  const [showResults, setShowResults] = useState(false)
+  const [error, setError]             = useState<string | null>(null)
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,8 +56,9 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
 
       if (!res.ok) {
         if (res.status === 503) throw new Error('Google Books ist vorübergehend nicht verfügbar.')
-        if (res.status === 429) throw new Error('Zu viele Anfragen — bitte kurz warten.')
-        throw new Error(`Fehler ${res.status}`)
+        if (res.status === 429) throw new Error('Google Books Rate-Limit. Bitte 30 Sekunden warten und erneut versuchen.')
+        if (res.status === 400) throw new Error('Ungültige Suchanfrage.')
+        throw new Error(`API-Fehler ${res.status}`)
       }
 
       const data = await res.json()
@@ -77,7 +86,6 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
           authors:       v.authors?.join(', ') ?? 'Unbekannter Autor',
           coverUrl:      v.imageLinks?.thumbnail?.replace('http:', 'https:') ?? '',
           publishedDate: v.publishedDate ?? '',
-          description:   v.description ?? '',
         }
       }))
       setShowResults(true)
@@ -104,14 +112,10 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
 
   return (
     <div className="mb-6">
-
-      {/* Suchzeile */}
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4
-                       text-base-content/35 pointer-events-none"
-          />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4
+                             text-base-content/35 pointer-events-none" />
           <input
             type="text"
             value={query}
@@ -125,29 +129,22 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
               type="button"
               onClick={handleClear}
               className="absolute right-3 top-1/2 -translate-y-1/2
-                         text-base-content/30 hover:text-base-content/70
-                         transition-colors"
+                         text-base-content/30 hover:text-base-content/70 transition-colors"
               aria-label="Eingabe löschen"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
-
         <button
           type="submit"
           disabled={isLoading || !query.trim()}
           className="btn-bib-primary min-w-[5.5rem]"
         >
-          {isLoading ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            'Suchen'
-          )}
+          {isLoading ? <span className="loading loading-spinner loading-xs" /> : 'Suchen'}
         </button>
       </form>
 
-      {/* Fehlermeldung */}
       {error && (
         <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-lg
                         bg-error/8 border border-error/20">
@@ -156,51 +153,34 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
         </div>
       )}
 
-      {/* Ergebnis-Liste */}
       {showResults && results.length > 0 && (
-        <div
-          className="mt-2 bg-base-100 rounded-lg overflow-hidden
-                     border border-base-content/8
-                     shadow-lg max-h-[420px] overflow-y-auto
-                     anim-fade-in"
-        >
+        <div className="mt-2 bg-base-100 rounded-lg overflow-hidden border border-base-content/8
+                        shadow-lg max-h-[420px] overflow-y-auto anim-fade-in">
           <div className="px-4 py-2.5 border-b border-base-content/8 flex items-center justify-between">
             <span className="label-caps">{results.length} Ergebnisse</span>
-            <button
-              onClick={handleClear}
-              className="text-base-content/35 hover:text-base-content/70
-                         transition-colors text-xs"
-            >
+            <button onClick={handleClear}
+              className="text-base-content/35 hover:text-base-content/70 transition-colors text-xs">
               Schließen
             </button>
           </div>
-
           {results.map((book, i) => (
             <button
               key={i}
               onClick={() => handleSelect(book)}
               className="w-full flex gap-3 px-4 py-3 text-left
-                         hover:bg-base-content/4
-                         border-b border-base-content/5 last:border-0
+                         hover:bg-base-content/4 border-b border-base-content/5 last:border-0
                          transition-colors duration-150 group"
             >
-              {/* Mini-Cover */}
               <div className="flex-shrink-0 w-9 h-[3.375rem] rounded overflow-hidden bg-base-300">
                 {book.coverUrl ? (
-                  <img
-                    src={book.coverUrl}
-                    alt={book.title}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                  <img src={book.coverUrl} alt={book.title}
+                    className="w-full h-full object-cover" loading="lazy" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <BookOpen className="w-3.5 h-3.5 text-base-content/25" />
                   </div>
                 )}
               </div>
-
-              {/* Meta */}
               <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
                 <p className="card-title-serif text-sm leading-snug line-clamp-1
                               group-hover:text-primary transition-colors">
