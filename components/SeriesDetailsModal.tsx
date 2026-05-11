@@ -82,7 +82,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Buchreihe \u201e${series.name}\u201c wirklich löschen?\nBücher bleiben erhalten.`)) return
+    if (!confirm(`Buchreihe \u201e${series.name}\u201c wirklich l\u00f6schen?\nB\u00fccher bleiben erhalten.`)) return
     setIsDeleting(true)
     try {
       const books = await db.books.where('seriesId').equals(series.id!).toArray()
@@ -92,16 +92,22 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
     } finally { setIsDeleting(false) }
   }
 
+  // Close self, then open AddBookToSeries as standalone portal
+  const handleOpenAddBook = () => {
+    onClose()
+    setIsAddBookOpen(true)
+  }
+
   const STATUS_CLS:   Record<string, string> = { unread: 'status-unread', reading: 'status-reading', finished: 'status-finished' }
   const STATUS_LABEL: Record<string, string> = { unread: 'Ungelesen', reading: 'Lese ich', finished: 'Gelesen' }
 
-  if (!isOpen || !mounted) return null
+  if (!mounted) return null
 
   const totalBooks    = booksInSeries?.length ?? 0
   const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length ?? 0
   const readingBooks  = booksInSeries?.filter(b => b.status === 'reading').length  ?? 0
 
-  const modal = (
+  const modal = isOpen ? (
     <div className="modal-overlay anim-fade-in" onClick={onClose}>
       <div
         className="modal-box anim-modal-in"
@@ -109,16 +115,13 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
         onClick={e => e.stopPropagation()}
         role="dialog" aria-modal="true" aria-labelledby="series-details-title"
       >
-        {/* Handle */}
         <div className="modal-box__handle">
           <div className="modal-box__handle-bar" />
         </div>
 
-        {/* ── HEADER ────────────────────────────────────── */}
+        {/* HEADER */}
         <div className="modal-box__header">
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-
-            {/* Buch-Anzahl Badge */}
             <div style={{
               flexShrink: 0,
               display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -129,11 +132,10 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                 fontWeight: 700, lineHeight: 1, color: 'var(--color-accent)',
               }}>{totalBooks}</span>
               <p className="label-caps" style={{ marginTop: '0.15rem' }}>
-                {totalBooks === 1 ? 'Buch' : 'Bücher'}
+                {totalBooks === 1 ? 'Buch' : 'B\u00fccher'}
               </p>
             </div>
 
-            {/* Name + Rating + Progress */}
             <div style={{ flex: 1, minWidth: 0 }}>
               {isEditingName ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
@@ -174,7 +176,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
                   <MiniStars rating={series.overallRating} />
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                    Ø {series.overallRating?.toFixed(1)}
+                    \u00d8 {series.overallRating?.toFixed(1)}
                   </span>
                 </div>
               )}
@@ -192,9 +194,8 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
               )}
             </div>
 
-            {/* Schließen */}
             <button onClick={onClose} className="btn btn-icon btn-ghost"
-              style={{ flexShrink: 0, marginTop: '0.1rem' }} aria-label="Schließen">
+              style={{ flexShrink: 0, marginTop: '0.1rem' }} aria-label="Schlie\u00dfen">
               <X style={{ width: '1rem', height: '1rem' }} />
             </button>
           </div>
@@ -202,7 +203,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
 
         <div className="modal-box__divider" />
 
-        {/* ── BODY: Bücherliste ─────────────────────────── */}
+        {/* BODY */}
         <div className="modal-box__body">
           {!booksInSeries || booksInSeries.length === 0 ? (
             <div style={{
@@ -211,7 +212,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
               color: 'var(--color-text-faint)',
             }}>
               <BookOpen style={{ width: '2rem', height: '2rem' }} />
-              <p style={{ fontSize: 'var(--text-sm)' }}>Noch keine Bücher in dieser Reihe</p>
+              <p style={{ fontSize: 'var(--text-sm)' }}>Noch keine B\u00fccher in dieser Reihe</p>
             </div>
           ) : (
             booksInSeries.map((book, idx) => (
@@ -234,10 +235,8 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                   fontFamily: 'var(--font-display)', fontSize: 'var(--text-base)',
                   fontWeight: 700,
                   color: 'oklch(from var(--color-accent) l c h / 0.5)',
-                }}>{book.seriesPosition ?? '–'}</span>
-
+                }}>{book.seriesPosition ?? '\u2013'}</span>
                 <BookCover book={book} />
-
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{
                     fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)',
@@ -247,14 +246,13 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
                   }}>{book.title}</p>
                   <MiniStars rating={book.rating} />
                 </div>
-
                 <span className={STATUS_CLS[book.status]} style={{ flexShrink: 0 }}>{STATUS_LABEL[book.status]}</span>
               </button>
             ))
           )}
         </div>
 
-        {/* ── FOOTER ────────────────────────────────────── */}
+        {/* FOOTER */}
         <div className="modal-box__footer">
           <button onClick={handleDelete} disabled={isDeleting}
             style={{
@@ -277,23 +275,22 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
             }}
           >
             <Trash2 style={{ width: '1rem', height: '1rem' }} />
-            {isDeleting ? 'Lösche…' : 'Reihe löschen'}
+            {isDeleting ? 'L\u00f6sche\u2026' : 'Reihe l\u00f6schen'}
           </button>
 
-          <button onClick={() => setIsAddBookOpen(true)} className="btn btn-primary"
+          <button onClick={handleOpenAddBook} className="btn btn-primary"
             style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <Plus style={{ width: '1rem', height: '1rem' }} />
-            Buch hinzufügen
+            Buch hinzuf\u00fcgen
           </button>
         </div>
       </div>
     </div>
-  )
+  ) : null
 
   return (
     <>
       {createPortal(modal, document.body)}
-      {/* Sub-modals are already portals themselves via their own createPortal */}
       <AddBookToSeriesModal series={series} isOpen={isAddBookOpen} onClose={() => setIsAddBookOpen(false)} />
       {selectedBook && (
         <BookDetailsModal book={selectedBook} isOpen={true} onClose={() => setSelectedBook(null)} />
