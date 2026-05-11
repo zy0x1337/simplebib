@@ -13,11 +13,11 @@ import { AddSeriesModal } from '@/components/AddSeriesModal'
 import { BookPlus, Library, Search, BookOpen } from 'lucide-react'
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<'books' | 'series'>('books')
+  const [activeTab, setActiveTab]           = useState<'books' | 'series'>('books')
   const [isSeriesModalOpen, setIsSeriesModalOpen] = useState(false)
-  const [sortedSeries, setSortedSeries] = useState<Series[]>([])
+  const [sortedSeries, setSortedSeries]     = useState<Series[]>([])
   const [preFillBookData, setPreFillBookData] = useState<{ title: string; authors: string; coverUrl: string } | null>(null)
-  const [showSearch, setShowSearch] = useState(false)
+  const [showSearch, setShowSearch]         = useState(false)
 
   const allBooks  = useLiveQuery(() => db.books.toArray())
   const allSeries = useLiveQuery(() => db.series.toArray())
@@ -39,7 +39,7 @@ export default function HomePage() {
     setShowSearch(false)
   }
 
-  /* ── Loading ───────────────────────────────────────────── */
+  /* ── Loading ─────────────────────────────────────────────────── */
   if (!allBooks || !allSeries) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -48,33 +48,64 @@ export default function HomePage() {
     )
   }
 
-  /* ── Empty State ───────────────────────────────────────── */
+  /* ── Empty State (erste Öffnung) ─────────────────────────────────────── */
   if (allBooks.length === 0 && allSeries.length === 0) {
     return (
       <div className="min-h-screen bg-base-200 anim-fade-in">
         <Header />
-        <div className="container mx-auto px-4 py-12 page-content">
-          <div className="text-center max-w-sm mx-auto">
-            <div className="mb-6 anim-scale-in">
-              <BookPlus className="w-20 h-20 mx-auto mb-5 text-base-content/25" />
+        <div className="container mx-auto px-5 py-14 page-content">
+          <div className="max-w-xs mx-auto flex flex-col items-center text-center gap-6">
+
+            {/* Ornamentale Bücherstapel-SVG statt generischem Icon */}
+            <div className="anim-scale-in">
+              <svg width="72" height="72" viewBox="0 0 72 72" fill="none"
+                aria-hidden="true" className="mx-auto">
+                {/* Buch 1 — geneigt, unten */}
+                <rect x="10" y="44" width="38" height="10" rx="2"
+                  fill="none" stroke="currentColor" strokeWidth="1.5"
+                  className="text-primary/40"
+                  transform="rotate(-4 10 44)"
+                />
+                {/* Buch 2 — gerade, mitte */}
+                <rect x="14" y="30" width="36" height="12" rx="2"
+                  fill="none" stroke="currentColor" strokeWidth="1.5"
+                  className="text-primary/60"
+                />
+                {/* Buch 3 — leicht geneigt, oben */}
+                <rect x="16" y="16" width="34" height="12" rx="2"
+                  fill="none" stroke="currentColor" strokeWidth="1.5"
+                  className="text-primary"
+                  transform="rotate(3 16 16)"
+                />
+                {/* Lesezeichen */}
+                <path d="M48 16 L48 10 L52 12 L56 10 L56 16"
+                  stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"
+                  className="text-secondary"
+                />
+              </svg>
             </div>
-            <h2 className="font-display text-2xl font-semibold italic mb-2 text-base-content">
-              Willkommen in YunoBib
-            </h2>
-            <p className="text-base-content/60 mb-8 text-sm leading-relaxed">
-              Füge dein erstes Buch hinzu oder erstelle eine Buchreihe.
-            </p>
-            <div className="mb-6 anim-fade-up delay-1">
+
+            <div className="anim-fade-up delay-1">
+              <h2 className="font-display text-2xl italic mb-2 leading-tight">
+                Deine Bibliothek
+              </h2>
+              <p className="text-sm text-base-content/55 leading-relaxed">
+                Noch leer — aber das ändert sich gleich.
+              </p>
+            </div>
+
+            <div className="w-full anim-fade-up delay-2">
               <BookSearch onBookSelect={handleBookSelect} />
             </div>
-            <div className="flex gap-3 justify-center anim-fade-up delay-2">
+
+            <div className="flex gap-3 justify-center anim-fade-up delay-3">
               <AddBookButton />
               <button
                 className="btn-bib-ghost border border-base-content/12 gap-2"
                 onClick={() => setIsSeriesModalOpen(true)}
               >
                 <Library className="w-4 h-4" />
-                Buchreihe
+                Reihe anlegen
               </button>
             </div>
           </div>
@@ -87,19 +118,19 @@ export default function HomePage() {
     )
   }
 
-  /* ── Main View ──────────────────────────────────────────── */
+  /* ── Main View ──────────────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-base-200">
       <Header />
 
       <div className="container mx-auto px-3 sm:px-4 pt-4 pb-2 page-content">
 
-        {/* ── Desktop Search (versteckt auf Mobile — über Bottom-Nav Suche-Tab) */}
+        {/* ── Desktop Suche */}
         <div className="hidden sm:block mb-5">
           <BookSearch onBookSelect={handleBookSelect} />
         </div>
 
-        {/* ── Mobile Search (einblendbar über Bottom-Nav) */}
+        {/* ── Mobile Suche (einblendbar) */}
         {showSearch && (
           <div className="sm:hidden mb-4 anim-fade-up">
             <BookSearch onBookSelect={handleBookSelect} />
@@ -110,36 +141,31 @@ export default function HomePage() {
           <AddBookModal isOpen={true} preFill={preFillBookData} onClose={() => setPreFillBookData(null)} />
         )}
 
-        {/* ── Tabs */}
-        <div className="tabs tabs-boxed mb-5 bg-base-100 p-1 shadow-sm inline-flex w-full sm:w-auto">
-          <a
-            className={`tab flex-1 sm:flex-none sm:min-w-[140px] text-sm ${
-              activeTab === 'books' ? 'tab-active' : ''
-            }`}
+        {/* ── Tabs — bib-tab statt DaisyUI tabs-boxed */}
+        <div className="bib-tabs">
+          <button
+            className={`bib-tab ${activeTab === 'books' ? 'active' : ''}`}
             onClick={() => setActiveTab('books')}
           >
-            <span className="font-medium">Bücher</span>
-            <span className="badge badge-sm badge-ghost ml-2">{standaloneBooks?.length ?? 0}</span>
-          </a>
-          <a
-            className={`tab flex-1 sm:flex-none sm:min-w-[140px] text-sm ${
-              activeTab === 'series' ? 'tab-active' : ''
-            }`}
+            Bücher
+            <span className="bib-tab-count">
+              {standaloneBooks?.length ?? 0}
+            </span>
+          </button>
+          <button
+            className={`bib-tab ${activeTab === 'series' ? 'active' : ''}`}
             onClick={() => setActiveTab('series')}
           >
-            <span className="font-medium">Reihen</span>
-            <span className="badge badge-sm badge-ghost ml-2">{sortedSeries.length}</span>
-          </a>
+            Reihen
+            <span className="bib-tab-count">
+              {sortedSeries.length}
+            </span>
+          </button>
         </div>
 
-        {/* ── Books Grid */}
+        {/* ── Bücher-Grid */}
         {activeTab === 'books' ? (
           standaloneBooks && standaloneBooks.length > 0 ? (
-            /*
-              Mobile: 2 Spalten (wie App Store / Play Store)
-              Tablet: 3 Spalten
-              Desktop: 4 Spalten
-            */
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
               {standaloneBooks.map((book, index) => (
                 <div
@@ -152,10 +178,24 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-base-100 rounded-xl">
-              <BookOpen className="w-12 h-12 mx-auto mb-3 text-base-content/25" />
-              <p className="text-base-content/50 text-sm">
-                Keine Einzelbücher. Alle Bücher sind in Reihen.
+            /* Inline-Empty-State Bücher */
+            <div className="flex flex-col items-center gap-3 py-14 text-center">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none"
+                aria-hidden="true" className="text-base-content/20">
+                <rect x="6" y="5" width="22" height="30" rx="2"
+                  stroke="currentColor" strokeWidth="1.5" />
+                <line x1="6" y1="12" x2="28" y2="12"
+                  stroke="currentColor" strokeWidth="1" strokeDasharray="2 3" />
+                <line x1="10" y1="18" x2="24" y2="18"
+                  stroke="currentColor" strokeWidth="1" />
+                <line x1="10" y1="22" x2="20" y2="22"
+                  stroke="currentColor" strokeWidth="1" />
+              </svg>
+              <p className="font-display italic text-base text-base-content/40">
+                Noch keine Einzelbücher
+              </p>
+              <p className="text-xs text-base-content/30">
+                Alle Bücher sind in Reihen — oder füge jetzt eines hinzu.
               </p>
             </div>
           )
@@ -172,11 +212,23 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-base-100 rounded-xl">
-            <Library className="w-12 h-12 mx-auto mb-3 text-base-content/25" />
-            <p className="text-base-content/50 text-sm mb-5">Noch keine Buchreihen</p>
+          /* Inline-Empty-State Reihen */
+          <div className="flex flex-col items-center gap-3 py-14 text-center">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none"
+              aria-hidden="true" className="text-base-content/20">
+              {/* 3 Bücher nebeneinander */}
+              <rect x="4"  y="8" width="8" height="24" rx="1.5"
+                stroke="currentColor" strokeWidth="1.5" />
+              <rect x="16" y="6" width="8" height="28" rx="1.5"
+                stroke="currentColor" strokeWidth="1.5" />
+              <rect x="28" y="10" width="8" height="22" rx="1.5"
+                stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <p className="font-display italic text-base text-base-content/40">
+              Noch keine Reihen
+            </p>
             <button
-              className="btn-bib-primary gap-2"
+              className="btn-bib-primary mt-1 gap-2 text-sm"
               onClick={() => setIsSeriesModalOpen(true)}
             >
               <Library className="w-4 h-4" />
@@ -186,7 +238,7 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* ── Desktop FABs (nur ab sm) */}
+      {/* ── Desktop FABs */}
       <div className="hidden sm:flex fixed bottom-6 right-6 flex-col gap-3 z-40">
         {activeTab === 'series' && (
           <button
@@ -204,7 +256,7 @@ export default function HomePage() {
       {/* ── Mobile Bottom Navigation */}
       <nav className="bottom-nav sm:hidden" aria-label="Hauptnavigation">
         <button
-          className={`bottom-nav-item ${activeTab === 'books' ? 'active' : ''}`}
+          className={`bottom-nav-item ${activeTab === 'books' && !showSearch ? 'active' : ''}`}
           onClick={() => { setActiveTab('books'); setShowSearch(false) }}
           aria-label="Bücher"
         >
@@ -214,10 +266,7 @@ export default function HomePage() {
 
         <button
           className={`bottom-nav-item ${showSearch ? 'active' : ''}`}
-          onClick={() => {
-            setShowSearch(s => !s)
-            // Beim Öffnen der Suche: kein Tab-Wechsel
-          }}
+          onClick={() => setShowSearch(s => !s)}
           aria-label="Suche"
         >
           <Search className="w-5 h-5" />
@@ -225,7 +274,7 @@ export default function HomePage() {
         </button>
 
         <button
-          className={`bottom-nav-item ${activeTab === 'series' ? 'active' : ''}`}
+          className={`bottom-nav-item ${activeTab === 'series' && !showSearch ? 'active' : ''}`}
           onClick={() => { setActiveTab('series'); setShowSearch(false) }}
           aria-label="Reihen"
         >
@@ -235,11 +284,7 @@ export default function HomePage() {
 
         <button
           className="bottom-nav-item"
-          onClick={() => {
-            // AddBookButton-Logik: Modal öffnen
-            // Wir triggern den AddBookButton-Click indirekt über einen Custom Event
-            document.dispatchEvent(new CustomEvent('yuno:add-book'))
-          }}
+          onClick={() => document.dispatchEvent(new CustomEvent('yuno:add-book'))}
           aria-label="Buch hinzufügen"
         >
           <BookPlus className="w-5 h-5" />
