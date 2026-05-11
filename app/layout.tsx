@@ -1,21 +1,24 @@
-// PWA-Pattern: Root Layout mit Theme & Metadata
-// Next.js 15 kompatibel (viewport getrennt)
-// Performance-Critical: Minimal CSS
-// App-like UX: Native Feel
-
 import type { Metadata, Viewport } from 'next'
-import { Instrument_Serif } from 'next/font/google'
+import { Playfair_Display, Lora } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 
-const instrumentSerif = Instrument_Serif({ 
-  weight: '400',
+const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+})
+
+const lora = Lora({
+  subsets: ['latin'],
+  variable: '--font-body',
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
 })
 
 export const metadata: Metadata = {
-  title: 'YunoBib — Premium Buchjournal 2026',
+  title: 'YunoBib — Dein Buchjournal',
   description: 'Ein minimalistisches Offline-First Tool zum Verwalten deiner Bücher und Buchreihen',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
@@ -29,7 +32,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#8fac8e',
+  themeColor: '#3d5a3e',
 }
 
 export default function RootLayout({
@@ -38,12 +41,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="de" suppressHydrationWarning className={`${instrumentSerif.variable}`}>
+    <html
+      lang="de"
+      suppressHydrationWarning
+      className={`${playfair.variable} ${lora.variable}`}
+    >
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#8fac8e" />
+        <meta name="theme-color" content="#3d5a3e" />
       </head>
-      <body className="antialiased">
+      <body className="antialiased font-body">
         <ThemeProvider>
           {children}
         </ThemeProvider>
