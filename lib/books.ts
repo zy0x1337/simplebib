@@ -1,35 +1,43 @@
-export async function fetchBookByISBN(isbn: string) {
-  const cleanISBN = isbn.replace(/-/g, '')
-  const res = await fetch(
-    `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanISBN}`
-  )
-  const data = await res.json()
-  if (!data.items || data.items.length === 0) throw new Error('Buch nicht gefunden')
+/*
+  Alle Google Books Calls laufen über die interne Route /api/books/search.
+  Der API-Key wird server-seitig angehängt — nie im Browser-Bundle.
+*/
 
-  const bookData = data.items[0].volumeInfo
+async function googleBooks(q: string) {
+  const res  = await fetch(`/api/books/search?q=${encodeURIComponent(q)}`)
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error ?? `API error ${res.status}`)
+  return data
+}
+
+export async function fetchBookByISBN(isbn: string) {
+  const clean = isbn.replace(/-/g, '')
+  const data  = await googleBooks(`isbn:${clean}`)
+
+  if (!data.items?.length) throw new Error('Buch nicht gefunden')
+
+  const v = data.items[0].volumeInfo
   return {
-    title: bookData.title || '',
-    authors: bookData.authors ? bookData.authors.join(', ') : 'Unbekannter Autor',
-    coverUrl: bookData.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
-    description: bookData.description || '',
-    publishedDate: bookData.publishedDate || ''
+    title:         v.title ?? '',
+    authors:       v.authors?.join(', ') ?? 'Unbekannter Autor',
+    coverUrl:      v.imageLinks?.thumbnail?.replace('http:', 'https:') ?? '',
+    description:   v.description ?? '',
+    publishedDate: v.publishedDate ?? '',
   }
 }
 
 export async function fetchBookByTitle(title: string) {
-  const res = await fetch(
-    `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(title)}&maxResults=10`
-  )
-  const data = await res.json()
-  if (!data.items || data.items.length === 0) throw new Error('Kein Buch gefunden')
+  const data = await googleBooks(`intitle:${title}`)
+
+  if (!data.items?.length) throw new Error('Kein Buch gefunden')
 
   return data.items.map((item: any) => {
-    const info = item.volumeInfo
+    const v = item.volumeInfo
     return {
-      title: info.title || '',
-      authors: info.authors ? info.authors.join(', ') : 'Unbekannter Autor',
-      coverUrl: info.imageLinks?.thumbnail?.replace('http:', 'https:') || '',
-      publishedDate: info.publishedDate || '',
+      title:         v.title ?? '',
+      authors:       v.authors?.join(', ') ?? 'Unbekannter Autor',
+      coverUrl:      v.imageLinks?.thumbnail?.replace('http:', 'https:') ?? '',
+      publishedDate: v.publishedDate ?? '',
     }
   })
 }
