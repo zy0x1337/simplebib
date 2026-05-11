@@ -2,7 +2,7 @@
 
 import { Book } from '@/lib/db'
 import { useState, useEffect } from 'react'
-import { Star, StarHalf, Star as StarEmpty, BookOpen, Calendar, Tag, AlignLeft } from 'lucide-react'
+import { Star, StarHalf, BookOpen } from 'lucide-react'
 import { BookDetailsModal } from './BookDetailsModal'
 
 interface BookCardProps {
@@ -10,27 +10,32 @@ interface BookCardProps {
   viewMode: 'grid' | 'list'
 }
 
-function renderStars(rating?: number) {
-  if (rating === undefined) return null
-
-  const stars = []
-  for (let i = 1; i <= 5; i++) {
-    if (rating >= i) {
-      stars.push(<Star key={i} className="w-4 h-4 fill-warning text-warning" />)
-    } else if (rating >= i - 0.5) {
-      stars.push(<StarHalf key={i} className="w-4 h-4 fill-warning text-warning" />)
-    } else {
-      stars.push(<StarEmpty key={i} className="w-4 h-4 text-base-content/30" />)
-    }
-  }
-  return <div className="flex gap-0.5">{stars}</div>
+function StarRow({ rating }: { rating?: number }) {
+  if (rating === undefined || rating === 0) return null
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => {
+        const n = i + 1
+        if (rating >= n)
+          return <Star key={n} className="w-3.5 h-3.5 fill-warning text-warning" />
+        if (rating >= n - 0.5)
+          return <StarHalf key={n} className="w-3.5 h-3.5 fill-warning text-warning" />
+        return <Star key={n} className="w-3.5 h-3.5 text-base-content/20" />
+      })}
+    </div>
+  )
 }
+
+const STATUS = {
+  unread:   { cls: 'status-unread',   label: 'Ungelesen' },
+  reading:  { cls: 'status-reading',  label: 'Lese ich'  },
+  finished: { cls: 'status-finished', label: 'Gelesen'   },
+} as const
 
 export function BookCard({ book, viewMode }: BookCardProps) {
   const [coverSrc, setCoverSrc] = useState<string>('')
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Cover Blob oder URL laden
   useEffect(() => {
     if (book.coverType === 'upload' && book.coverBlob) {
       const url = URL.createObjectURL(book.coverBlob)
@@ -41,54 +46,51 @@ export function BookCard({ book, viewMode }: BookCardProps) {
     }
   }, [book])
 
-  // Status Farben & Labels
-  const statusConfig = {
-    unread: { color: 'badge-ghost', label: 'Ungelesen', icon: '📖' },
-    reading: { color: 'badge-info', label: 'Lese ich', icon: '📍' },
-    finished: { color: 'badge-success', label: 'Gelesen', icon: '✅' },
-  }
+  const status = STATUS[book.status]
 
+  /* ── LIST VIEW ───────────────────────────────────────────── */
   if (viewMode === 'list') {
     return (
       <>
-        <div
-          className="card card-side bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group"
+        <article
+          className="flex gap-4 px-4 py-3 cursor-pointer group
+                     hover:bg-base-content/4
+                     transition-colors duration-150 rounded-lg"
           onClick={() => setIsModalOpen(true)}
         >
-          <figure className="w-28 flex-shrink-0 overflow-hidden rounded-l-lg">
+          {/* Cover — kleines Thumbnail */}
+          <div className="flex-shrink-0 w-10 h-14 rounded overflow-hidden bg-base-300">
             {coverSrc ? (
-              <img src={coverSrc} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              <img
+                src={coverSrc}
+                alt={book.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
             ) : (
-              <div className="w-full h-full bg-base-300 flex items-center justify-center">
-                <BookOpen className="w-10 h-10 text-base-content/30" />
+              <div className="w-full h-full flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-base-content/25" />
               </div>
             )}
-          </figure>
-          <div className="card-body p-4 flex-1">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="card-title text-lg font-display font-semibold mb-1">{book.title}</h3>
-                <p className="text-sm text-base-content/70 flex items-center gap-1">
-                  <AlignLeft className="w-3.5 h-3.5" />
-                  {book.author}
-                </p>
-              </div>
-              <span className={`badge ${statusConfig[book.status].color} gap-1`}>
-                <span>{statusConfig[book.status].icon}</span>
-                {statusConfig[book.status].label}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 mt-3">
-              {renderStars(book.rating)}
-              {book.dateRead && (
-                <span className="text-xs text-base-content/50 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {new Date(book.dateRead).toLocaleDateString('de-DE')}
-                </span>
-              )}
-            </div>
           </div>
-        </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+            <h3 className="card-title-serif text-sm leading-snug truncate
+                           group-hover:text-primary transition-colors">
+              {book.title}
+            </h3>
+            <p className="text-xs text-base-content/50 font-body truncate">
+              {book.author}
+            </p>
+            {book.rating ? <StarRow rating={book.rating} /> : null}
+          </div>
+
+          {/* Status */}
+          <div className="flex-shrink-0 flex items-center">
+            <span className={status.cls}>{status.label}</span>
+          </div>
+        </article>
 
         <BookDetailsModal
           book={book}
@@ -99,47 +101,57 @@ export function BookCard({ book, viewMode }: BookCardProps) {
     )
   }
 
+  /* ── GRID VIEW ─────────────────────────────────────────────── */
   return (
     <>
-      <div 
-        className="book-card cursor-pointer group" 
+      <article
+        className="book-card group"
         onClick={() => setIsModalOpen(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setIsModalOpen(true)}
+        aria-label={`${book.title} von ${book.author}`}
       >
-        <figure className="aspect-[2/3] bg-base-300 overflow-hidden">
+        {/* Cover — 2:3 Aspect Ratio */}
+        <div className="relative aspect-[2/3] bg-base-300 overflow-hidden">
           {coverSrc ? (
-            <img 
-              src={coverSrc} 
-              alt={book.title} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            <img
+              src={coverSrc}
+              alt={book.title}
+              className="w-full h-full object-cover
+                         group-hover:scale-[1.03] transition-transform duration-500 ease-out"
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-base-300 to-base-200">
-              <BookOpen className="w-14 h-14 text-base-content/20" />
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2
+                            bg-gradient-to-b from-base-300 to-base-200">
+              <BookOpen className="w-10 h-10 text-base-content/15" />
+              <span className="label-caps">Kein Cover</span>
             </div>
           )}
-        </figure>
-        <div className="card-body p-4">
-          <h3 className="font-display font-semibold text-base line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
-            {book.title}
-          </h3>
-          <p className="text-xs text-base-content/60 flex items-center gap-1">
-            <AlignLeft className="w-3 h-3" />
-            {book.author}
-          </p>
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              {renderStars(book.rating)}
-            </div>
-            <span 
-              className={`badge badge-xs ${statusConfig[book.status].color}`}
-              title={statusConfig[book.status].label}
-            >
-              {statusConfig[book.status].icon}
-            </span>
+
+          {/* Status-Chip über dem Cover */}
+          <div className="absolute top-2 left-2">
+            <span className={status.cls}>{status.label}</span>
           </div>
         </div>
-      </div>
+
+        {/* Text-Bereich */}
+        <div className="px-3 pt-3 pb-3.5 flex flex-col gap-1">
+          <h3 className="card-title-serif text-sm leading-snug line-clamp-2
+                         group-hover:text-primary transition-colors duration-200">
+            {book.title}
+          </h3>
+          <p className="text-xs text-base-content/50 truncate">
+            {book.author}
+          </p>
+          {book.rating ? (
+            <div className="mt-1.5">
+              <StarRow rating={book.rating} />
+            </div>
+          ) : null}
+        </div>
+      </article>
 
       <BookDetailsModal
         book={book}
