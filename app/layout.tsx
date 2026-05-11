@@ -31,8 +31,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: '#3d5a3e',
+  // maximumScale entfernt — blockiert Android-Pinch-Zoom (Accessibility)
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5f0e8' },
+    { media: '(prefers-color-scheme: dark)',  color: '#1a1814' },
+  ],
 }
 
 export default function RootLayout({
@@ -48,9 +51,8 @@ export default function RootLayout({
     >
       <head>
         <link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#3d5a3e" />
       </head>
-      <body className="antialiased font-body">
+      <body className="antialiased">
         <ThemeProvider>
           {children}
         </ThemeProvider>
