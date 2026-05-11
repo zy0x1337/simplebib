@@ -11,7 +11,7 @@ interface SeriesDetailsModalProps {
   series: Series
   isOpen: boolean
   onClose: () => void
-  onOpenAddBook: () => void  // lifted to SeriesCard
+  onOpenAddBook: () => void
 }
 
 function BookCover({ book }: { book: Book }) {
@@ -81,7 +81,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Buchreihe \u201e${series.name}\u201c wirklich l\u00f6schen?\nB\u00fccher bleiben erhalten.`)) return
+    if (!confirm(`Buchreihe „${series.name}“ wirklich löschen?\nBücher bleiben erhalten.`)) return
     setIsDeleting(true)
     try {
       const books = await db.books.where('seriesId').equals(series.id!).toArray()
@@ -118,7 +118,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
                   <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '3rem', paddingTop: '0.1rem' }}>
                     <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', fontWeight: 700, lineHeight: 1, color: 'var(--color-accent)' }}>{totalBooks}</span>
-                    <p className="label-caps" style={{ marginTop: '0.15rem' }}>{totalBooks === 1 ? 'Buch' : 'B\u00fccher'}</p>
+                    <p className="label-caps" style={{ marginTop: '0.15rem' }}>{totalBooks === 1 ? 'Buch' : 'Bücher'}</p>
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -157,7 +157,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
                       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
                         <MiniStars rating={series.overallRating} />
                         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                          \u00d8 {series.overallRating?.toFixed(1)}
+                          Ø {series.overallRating?.toFixed(1)}
                         </span>
                       </div>
                     )}
@@ -176,7 +176,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
                   </div>
 
                   <button onClick={onClose} className="btn btn-icon btn-ghost"
-                    style={{ flexShrink: 0, marginTop: '0.1rem' }} aria-label="Schlie\u00dfen">
+                    style={{ flexShrink: 0, marginTop: '0.1rem' }} aria-label="Schließen">
                     <X style={{ width: '1rem', height: '1rem' }} />
                   </button>
                 </div>
@@ -189,7 +189,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
                 {!booksInSeries || booksInSeries.length === 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-2)', padding: 'var(--space-10) 0', color: 'var(--color-text-faint)' }}>
                     <BookOpen style={{ width: '2rem', height: '2rem' }} />
-                    <p style={{ fontSize: 'var(--text-sm)' }}>Noch keine B\u00fccher in dieser Reihe</p>
+                    <p style={{ fontSize: 'var(--text-sm)' }}>Noch keine Bücher in dieser Reihe</p>
                   </div>
                 ) : (
                   booksInSeries.map((book, idx) => (
@@ -208,7 +208,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <span style={{ flexShrink: 0, width: '1.5rem', textAlign: 'center', fontFamily: 'var(--font-display)', fontSize: 'var(--text-base)', fontWeight: 700, color: 'oklch(from var(--color-accent) l c h / 0.5)' }}>
-                        {book.seriesPosition ?? '\u2013'}
+                        {book.seriesPosition ?? '–'}
                       </span>
                       <BookCover book={book} />
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -246,13 +246,13 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
                   }}
                 >
                   <Trash2 style={{ width: '1rem', height: '1rem' }} />
-                  {isDeleting ? 'L\u00f6sche\u2026' : 'Reihe l\u00f6schen'}
+                  {isDeleting ? 'Lösche…' : 'Reihe löschen'}
                 </button>
 
                 <button onClick={onOpenAddBook} className="btn btn-primary"
                   style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                   <Plus style={{ width: '1rem', height: '1rem' }} />
-                  Buch hinzuf\u00fcgen
+                  Buch hinzufügen
                 </button>
               </div>
             </div>
@@ -261,7 +261,6 @@ export function SeriesDetailsModal({ series, isOpen, onClose, onOpenAddBook }: S
         document.body
       )}
 
-      {/* BookDetailsModal — also a portal, safe to always render */}
       {selectedBook && (
         <BookDetailsModal book={selectedBook} isOpen={true} onClose={() => setSelectedBook(null)} />
       )}
