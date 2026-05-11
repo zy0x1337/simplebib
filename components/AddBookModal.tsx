@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Book, updateSeriesRating } from '@/lib/db'
-import { X, Upload, Link as LinkIcon, Star, StarHalf } from 'lucide-react'
+import { X, Upload, Link as LinkIcon, Star } from 'lucide-react'
 import { compressImage } from '@/lib/imageUtils'
 
 interface AddBookModalProps {
@@ -13,9 +13,15 @@ interface AddBookModalProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'unread',   label: 'Ungelesen' },
-  { value: 'reading',  label: 'Lese ich'  },
-  { value: 'finished', label: 'Gelesen'   },
+  { value: 'unread',   label: 'Ungelesen',
+    bg: 'var(--color-surface-2)', color: 'var(--color-text-muted)',
+    activeBg: 'oklch(from var(--color-unread) l c h / 0.18)', activeColor: 'var(--color-text)' },
+  { value: 'reading',  label: 'Lese ich',
+    bg: 'var(--color-surface-2)', color: 'var(--color-text-muted)',
+    activeBg: 'var(--color-reading-muted)', activeColor: 'var(--color-reading)' },
+  { value: 'finished', label: 'Gelesen',
+    bg: 'var(--color-surface-2)', color: 'var(--color-text-muted)',
+    activeBg: 'var(--color-accent-muted)', activeColor: 'var(--color-accent)' },
 ] as const
 
 export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
@@ -29,10 +35,12 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
   const [coverPreview, setCoverPreview] = useState<string | null>(preFill?.coverUrl || null)
   const [status, setStatus]             = useState<'unread'|'reading'|'finished'>('unread')
   const [rating, setRating]             = useState(0)
-  const [assignToSeries, setAssignToSeries]   = useState(false)
+  const [hoverRating, setHoverRating]   = useState(0)
+  const [assignToSeries, setAssignToSeries]     = useState(false)
   const [selectedSeriesId, setSelectedSeriesId] = useState('')
-  const [seriesPosition, setSeriesPosition]   = useState(1)
+  const [seriesPosition, setSeriesPosition]     = useState(1)
   const [isLoading, setIsLoading]       = useState(false)
+  const [error, setError]               = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -49,20 +57,30 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
       setCoverPreview(preFill.coverUrl || null)
       setCoverType(preFill.coverUrl ? 'url' : 'none')
     }
+    if (isOpen) setError(null)
   }, [isOpen, preFill])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isOpen, onClose])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) { alert('Nur Bilddateien (JPG, PNG, WebP)'); return }
-    if (file.size > 5 * 1024 * 1024)    { alert('Datei zu groß. Max. 5 MB.'); return }
+    if (!file.type.startsWith('image/')) { setError('Nur Bilddateien (JPG, PNG, WebP)'); return }
+    if (file.size > 5 * 1024 * 1024)    { setError('Datei zu groß. Max. 5 MB.'); return }
     setIsLoading(true)
+    setError(null)
     try {
       const compressed = await compressImage(file)
       setCoverBlob(compressed)
       setCoverPreview(URL.createObjectURL(compressed))
       setCoverType('upload')
-    } catch { alert('Fehler beim Verarbeiten des Bildes') }
+    } catch { setError('Fehler beim Verarbeiten des Bildes') }
     finally  { setIsLoading(false) }
   }
 
@@ -80,10 +98,18 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const resetForm = () => {
+    setTitle(''); setAuthor(''); removeCover()
+    setStatus('unread'); setRating(0); setHoverRating(0)
+    setAssignToSeries(false); setSelectedSeriesId(''); setSeriesPosition(1)
+    setError(null)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || !author.trim()) { alert('Titel und Autor sind Pflichtfelder'); return }
-    if (assignToSeries && !selectedSeriesId) { alert('Bitte eine Buchreihe auswählen'); return }
+    setError(null)
+    if (!title.trim() || !author.trim()) { setError('Titel und Autor sind Pflichtfelder'); return }
+    if (assignToSeries && !selectedSeriesId) { setError('Bitte eine Buchreihe auswählen'); return }
     setIsLoading(true)
     try {
       const newBook: Omit<Book, 'id'> = {
@@ -100,143 +126,237 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
       }
       await db.books.add(newBook as Book)
       if (assignToSeries && selectedSeriesId) await updateSeriesRating(selectedSeriesId)
-      setTitle(''); setAuthor(''); removeCover()
-      setStatus('unread'); setRating(0)
-      setAssignToSeries(false); setSelectedSeriesId(''); setSeriesPosition(1)
+      resetForm()
       onClose()
-    } catch { alert('Fehler beim Hinzufügen des Buches') }
+    } catch { setError('Fehler beim Hinzufügen des Buches') }
     finally  { setIsLoading(false) }
   }
+
+  const displayRating = hoverRating || rating
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
+    <div className="modal-overlay anim-fade-in" onClick={onClose}>
+      {/* Panel — stopPropagation so backdrop-click doesn't bubble */}
       <div
-        className="absolute inset-0 bg-base-content/30 backdrop-blur-sm anim-fade-in"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div className="modal-panel relative w-full sm:max-w-md max-h-[92dvh]
-                      overflow-y-auto rounded-t-2xl sm:rounded-lg">
-
-        {/* Handle (mobile) */}
-        <div className="sm:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-base-content/20" />
+        className="modal-box anim-modal-in"
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-book-title"
+      >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-1 pb-2">
+          <div style={{
+            width: '2.5rem', height: '0.25rem',
+            borderRadius: 'var(--radius-full)',
+            background: 'var(--color-border)',
+          }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <h2 className="font-display text-lg font-semibold">Neues Buch</h2>
+        <div className="flex items-center justify-between mb-1" style={{ paddingBottom: 'var(--space-3)' }}>
+          <h2
+            id="add-book-title"
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-xl)',
+              fontWeight: 400,
+              fontStyle: 'italic',
+              letterSpacing: 'var(--tracking-tight)',
+              color: 'var(--color-text)',
+            }}
+          >
+            Neues Buch
+          </h2>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="w-8 h-8 flex items-center justify-center rounded-md
-                       text-base-content/40 hover:text-base-content hover:bg-base-content/6
-                       transition-colors"
+            className="btn btn-icon btn-ghost"
             aria-label="Schließen"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="bib-divider mx-5" />
+        <div style={{ height: '1px', background: 'var(--color-divider)', marginBottom: 'var(--space-4)' }} />
 
-        <form onSubmit={handleSubmit} className="px-5 pt-4 pb-6 flex flex-col gap-4">
+        {/* Inline error */}
+        {error && (
+          <div
+            className="anim-fade-in"
+            style={{
+              marginBottom: 'var(--space-3)',
+              padding: 'var(--space-2) var(--space-3)',
+              borderRadius: 'var(--radius-md)',
+              background: 'oklch(from var(--color-error) l c h / 0.12)',
+              color: 'var(--color-error)',
+              fontSize: 'var(--text-sm)',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 
           {/* Titel */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-caps">Titel *</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <label style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 600,
+              letterSpacing: 'var(--tracking-widest)',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-muted)',
+            }}>
+              Titel *
+            </label>
             <input
-              className="bib-input"
-              placeholder="z. B. Der Hobbit"
+              className="input"
+              placeholder="z. B. Der Hobbit"
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={e => { setTitle(e.target.value); setError(null) }}
               required
               disabled={isLoading}
             />
           </div>
 
           {/* Autor */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-caps">Autor *</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <label style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 600,
+              letterSpacing: 'var(--tracking-widest)',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-muted)',
+            }}>
+              Autor *
+            </label>
             <input
-              className="bib-input"
-              placeholder="z. B. J. R. R. Tolkien"
+              className="input"
+              placeholder="z. B. J. R. R. Tolkien"
               value={author}
-              onChange={e => setAuthor(e.target.value)}
+              onChange={e => { setAuthor(e.target.value); setError(null) }}
               required
               disabled={isLoading}
             />
           </div>
 
           {/* Cover */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-caps">Cover (optional)</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <label style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 600,
+              letterSpacing: 'var(--tracking-widest)',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-muted)',
+            }}>
+              Cover <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
+            </label>
 
             {coverPreview ? (
-              <div className="relative w-24 h-36 mx-auto">
+              <div style={{ position: 'relative', width: '6rem', margin: '0 auto' }}>
                 <img
                   src={coverPreview}
                   alt="Cover Vorschau"
-                  className="w-full h-full object-cover rounded-lg shadow-md"
+                  style={{
+                    width: '6rem',
+                    aspectRatio: '2/3',
+                    objectFit: 'cover',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: 'var(--shadow-book)',
+                    display: 'block',
+                  }}
                 />
                 <button
                   type="button"
                   onClick={removeCover}
                   disabled={isLoading}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full
-                             bg-base-content text-base-100
-                             flex items-center justify-center
-                             transition-opacity hover:opacity-80"
+                  style={{
+                    position: 'absolute', top: '-0.5rem', right: '-0.5rem',
+                    width: '1.5rem', height: '1.5rem',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--color-text)',
+                    color: 'var(--color-bg)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: 'none', cursor: 'pointer',
+                  }}
                   aria-label="Cover entfernen"
                 >
-                  <X className="w-3 h-3" />
+                  <X style={{ width: '0.75rem', height: '0.75rem' }} />
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isLoading}
-                  className="flex items-center justify-center gap-2 w-full py-2.5
-                             rounded-lg border border-dashed border-base-content/20
-                             text-sm text-base-content/50
-                             hover:border-base-content/40 hover:text-base-content/70
-                             transition-colors"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: 'var(--space-2)',
+                    width: '100%',
+                    padding: 'var(--space-3)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px dashed var(--color-border)',
+                    background: 'transparent',
+                    color: 'var(--color-text-faint)',
+                    fontSize: 'var(--text-sm)',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    transition: 'border-color var(--transition), color var(--transition)',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-text-muted)'
+                    ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border)'
+                    ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-faint)'
+                  }}
                 >
-                  <Upload className="w-4 h-4" />
+                  <Upload style={{ width: '1rem', height: '1rem' }} />
                   {isLoading ? 'Verarbeite…' : 'Bild hochladen'}
                 </button>
                 <input ref={fileInputRef} type="file" accept="image/*"
-                  className="hidden" onChange={handleFileUpload} disabled={isLoading} />
+                  style={{ display: 'none' }} onChange={handleFileUpload} disabled={isLoading} />
 
-                <div className="flex items-center gap-2 text-xs text-base-content/30">
-                  <div className="flex-1 bib-divider" />
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                  fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)',
+                }}>
+                  <div style={{ flex: 1, height: '1px', background: 'var(--color-divider)' }} />
                   <span>oder URL</span>
-                  <div className="flex-1 bib-divider" />
+                  <div style={{ flex: 1, height: '1px', background: 'var(--color-divider)' }} />
                 </div>
 
-                <div className="relative">
+                <div style={{ position: 'relative' }}>
                   <input
                     type="url"
-                    className="bib-input pr-10 text-sm"
+                    className="input"
+                    style={{ paddingRight: coverUrl ? '2.5rem' : undefined, fontSize: 'var(--text-sm)' }}
                     placeholder="https://…"
                     value={coverUrl}
                     onChange={e => handleUrlChange(e.target.value)}
                     disabled={isLoading}
                   />
                   {coverUrl && (
-                    <button type="button" onClick={() => handleUrlChange(coverUrl)}
+                    <button
+                      type="button"
+                      onClick={() => handleUrlChange(coverUrl)}
                       disabled={isLoading}
-                      className="absolute right-3 top-1/2 -translate-y-1/2
-                                 text-base-content/40 hover:text-base-content/70"
+                      style={{
+                        position: 'absolute', right: '0.75rem',
+                        top: '50%', transform: 'translateY(-50%)',
+                        color: 'var(--color-text-faint)',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                      }}
                       aria-label="URL verwenden"
                     >
-                      <LinkIcon className="w-3.5 h-3.5" />
+                      <LinkIcon style={{ width: '0.875rem', height: '0.875rem' }} />
                     </button>
                   )}
                 </div>
@@ -245,73 +365,161 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
           </div>
 
           {/* Status */}
-          <div className="flex flex-col gap-1.5">
-            <label className="label-caps">Status</label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {STATUS_OPTIONS.map(({ value, label }) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <label style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-xs)',
+              fontWeight: 600,
+              letterSpacing: 'var(--tracking-widest)',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-muted)',
+            }}>
+              Status
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-1)' }}>
+              {STATUS_OPTIONS.map(opt => (
                 <button
-                  key={value}
+                  key={opt.value}
                   type="button"
-                  onClick={() => setStatus(value)}
+                  onClick={() => setStatus(opt.value)}
                   disabled={isLoading}
-                  className={`py-2 rounded-lg text-sm font-medium transition-all duration-150
-                    ${ status === value
-                      ? 'bg-primary text-primary-content shadow-sm'
-                      : 'bg-base-200 text-base-content/60 hover:bg-base-300 hover:text-base-content'
-                    }`}
+                  style={{
+                    padding: 'var(--space-2)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid',
+                    borderColor: status === opt.value ? 'transparent' : 'var(--color-border)',
+                    background: status === opt.value ? opt.activeBg : 'transparent',
+                    color: status === opt.value ? opt.activeColor : 'var(--color-text-muted)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 500,
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    transition: 'all var(--transition)',
+                    letterSpacing: 'var(--tracking-wide)',
+                  }}
                 >
-                  {label}
+                  {opt.label}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Bewertung */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <label className="label-caps">Bewertung</label>
-              <span className="text-xs text-base-content/40 tabular-nums">
-                {rating > 0 ? `${rating} / 5` : '—'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: 'var(--text-xs)',
+                fontWeight: 600,
+                letterSpacing: 'var(--tracking-widest)',
+                textTransform: 'uppercase',
+                color: 'var(--color-text-muted)',
+              }}>
+                Bewertung
+              </label>
+              <span style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--color-text-faint)',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {rating > 0 ? `${rating} / 5` : '—'}
               </span>
             </div>
-            <div className="flex gap-1 justify-center py-1">
+
+            {/* Interactive stars */}
+            <div
+              style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'center', padding: 'var(--space-1) 0' }}
+              onMouseLeave={() => setHoverRating(0)}
+            >
               {Array.from({ length: 5 }, (_, i) => {
                 const n = i + 1
-                const filled = rating >= n
-                const half   = rating >= n - 0.5 && rating < n
-                return filled
-                  ? <Star key={n} className="w-7 h-7 fill-warning text-warning cursor-pointer"
-                      onClick={() => setRating(n)} />
-                  : half
-                  ? <StarHalf key={n} className="w-7 h-7 fill-warning text-warning cursor-pointer"
-                      onClick={() => setRating(n - 0.5)} />
-                  : <Star key={n} className="w-7 h-7 text-base-content/20 cursor-pointer
-                                              hover:text-warning/60 transition-colors"
-                      onClick={() => setRating(n)} />
+                const filled = displayRating >= n
+                const half   = displayRating >= n - 0.5 && displayRating < n
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={isLoading}
+                    aria-label={`${n} Sterne`}
+                    style={{
+                      background: 'none', border: 'none',
+                      padding: 'var(--space-1)',
+                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                      transition: 'transform var(--transition)',
+                    }}
+                    onMouseEnter={() => setHoverRating(n)}
+                    onClick={() => setRating(rating === n ? 0 : n)}
+                  >
+                    <Star
+                      style={{
+                        width: '1.5rem', height: '1.5rem',
+                        color: (filled || half) ? 'var(--color-star)' : 'var(--color-text-faint)',
+                        fill: filled ? 'var(--color-star)' : half ? 'url(#half-fill)' : 'none',
+                        transition: 'color var(--transition), fill var(--transition)',
+                      }}
+                    />
+                  </button>
+                )
               })}
             </div>
-            <input type="range" min="0" max="5" step="0.5" value={rating}
+
+            {/* Range input */}
+            <input
+              type="range" min="0" max="5" step="0.5" value={rating}
               onChange={e => setRating(parseFloat(e.target.value))}
-              className="range range-xs range-warning" />
+              className="bib-range"
+              disabled={isLoading}
+            />
           </div>
 
           {/* Buchreihe */}
           {seriesList && seriesList.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={assignToSeries}
-                  onChange={e => setAssignToSeries(e.target.checked)}
-                  className="checkbox checkbox-sm checkbox-primary"
-                />
-                <span className="label-caps">Buchreihe zuweisen</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                cursor: 'pointer',
+              }}>
+                {/* Custom checkbox */}
+                <span
+                  role="checkbox"
+                  aria-checked={assignToSeries}
+                  tabIndex={0}
+                  onClick={() => setAssignToSeries(v => !v)}
+                  onKeyDown={e => e.key === ' ' && setAssignToSeries(v => !v)}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: '1.125rem', height: '1.125rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: `2px solid ${assignToSeries ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                    background: assignToSeries ? 'var(--color-accent)' : 'transparent',
+                    flexShrink: 0,
+                    transition: 'all var(--transition)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {assignToSeries && (
+                    <svg viewBox="0 0 10 8" style={{ width: '0.6rem', fill: 'none', stroke: 'var(--color-bg)', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      <polyline points="1,4 4,7 9,1" />
+                    </svg>
+                  )}
+                </span>
+                <span style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 600,
+                  letterSpacing: 'var(--tracking-widest)',
+                  textTransform: 'uppercase',
+                  color: 'var(--color-text-muted)',
+                }}>
+                  Buchreihe zuweisen
+                </span>
               </label>
 
               {assignToSeries && (
-                <div className="flex gap-2 anim-fade-in">
+                <div className="anim-fade-in" style={{ display: 'flex', gap: 'var(--space-2)' }}>
                   <select
-                    className="bib-input flex-1"
+                    className="input"
+                    style={{ flex: 1 }}
                     value={selectedSeriesId}
                     onChange={e => setSelectedSeriesId(e.target.value)}
                   >
@@ -322,7 +530,8 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
                   </select>
                   <input
                     type="number"
-                    className="bib-input w-20 text-center"
+                    className="input"
+                    style={{ width: '5rem', textAlign: 'center' }}
                     placeholder="Band"
                     value={seriesPosition}
                     min={1}
@@ -334,22 +543,38 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
           )}
 
           {/* Actions */}
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} disabled={isLoading}
-              className="btn-bib-ghost flex-1">
+          <div style={{ display: 'flex', gap: 'var(--space-2)', paddingTop: 'var(--space-1)' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="btn btn-ghost"
+              style={{ flex: 1 }}
+            >
               Abbrechen
             </button>
             <button
               type="submit"
               disabled={isLoading || !title.trim() || !author.trim()}
-              className="btn-bib-primary flex-1"
+              className="btn btn-primary"
+              style={{ flex: 1 }}
             >
-              {isLoading
-                ? <span className="loading loading-spinner loading-xs" />
-                : 'Hinzufügen'
-              }
+              {isLoading ? (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '1rem', height: '1rem',
+                    border: '2px solid var(--color-text-inverse)',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.7s linear infinite',
+                  }}
+                  aria-label="Lädt…"
+                />
+              ) : 'Hinzufügen'}
             </button>
           </div>
+
         </form>
       </div>
     </div>
