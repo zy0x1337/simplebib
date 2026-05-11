@@ -10,6 +10,19 @@ interface BookCardProps {
   viewMode: 'grid' | 'list'
 }
 
+// 5 vintage spine palettes — based on book.id % 5
+const SPINE_PALETTES = [
+  { bg: '#2d3a2e', text: '#8faf7a' }, // moss green
+  { bg: '#3a2820', text: '#c9956a' }, // terracotta
+  { bg: '#1e2a3a', text: '#7a9eb5' }, // slate blue
+  { bg: '#3a3020', text: '#c8a85a' }, // ochre
+  { bg: '#2a1e2e', text: '#a07ab5' }, // plum
+] as const
+
+function getSpine(id?: number) {
+  return SPINE_PALETTES[(id ?? 0) % 5]
+}
+
 function StarRow({ rating }: { rating?: number }) {
   if (!rating) return null
   return (
@@ -17,10 +30,10 @@ function StarRow({ rating }: { rating?: number }) {
       {Array.from({ length: 5 }, (_, i) => {
         const n = i + 1
         if (rating >= n)
-          return <Star key={n} className="w-3 h-3 fill-warning text-warning" />
+          return <Star key={n} className="w-3 h-3" style={{ fill: 'var(--color-star)', color: 'var(--color-star)' }} />
         if (rating >= n - 0.5)
-          return <StarHalf key={n} className="w-3 h-3 fill-warning text-warning" />
-        return <Star key={n} className="w-3 h-3 text-base-content/15" />
+          return <StarHalf key={n} className="w-3 h-3" style={{ fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        return <Star key={n} className="w-3 h-3" style={{ color: 'var(--color-text-faint)' }} />
       })}
     </div>
   )
@@ -32,18 +45,18 @@ const STATUS = {
   finished: { cls: 'status-finished', label: 'Gelesen'   },
 } as const
 
-/*
-  CoverPlaceholder: zeigt den Buchtitel vertikal als Buchrücken-ästhetik.
-  Diagonal-Streifen-Hintergrund (cover-placeholder utility) +
-  rotierter Titel wie ein echter Bucheinband ohne Cover-Scan.
-*/
-function CoverPlaceholder({ title }: { title: string }) {
+function CoverPlaceholder({ title, bookId }: { title: string; bookId?: number }) {
+  const spine = getSpine(bookId)
   return (
-    <div className="cover-placeholder w-full h-full flex items-center justify-center p-2">
+    <div
+      className="cover-placeholder w-full h-full flex items-center justify-center p-2"
+      style={{ backgroundColor: spine.bg }}
+    >
       <span
-        className="font-display text-[0.6rem] font-semibold text-base-content/35
-                   leading-tight tracking-wide text-center line-clamp-4
-                   [writing-mode:vertical-rl] rotate-180"
+        style={{ color: spine.text, opacity: 0.7 }}
+        className="text-[0.6rem] font-medium leading-tight tracking-wide
+                   text-center line-clamp-4 [writing-mode:vertical-rl] rotate-180
+                   font-body"
       >
         {title}
       </span>
@@ -67,40 +80,49 @@ export function BookCard({ book, viewMode }: BookCardProps) {
 
   const status = STATUS[book.status]
 
-  /* ── LIST VIEW ───────────────────────────────────────────────── */
+  /* ── LIST VIEW ─────────────────────────────────────────────── */
   if (viewMode === 'list') {
     return (
       <>
         <article
-          className="flex gap-3 px-4 py-3 cursor-pointer group
-                     hover:bg-base-content/4 active:bg-base-content/6
-                     transition-colors duration-150 rounded-lg"
+          className="flex gap-3 px-4 py-3 cursor-pointer rounded-lg transition-colors duration-150"
+          style={{ color: 'var(--color-text)' }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'oklch(from var(--color-text) l c h / 0.04)'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
           onClick={() => setIsModalOpen(true)}
         >
-          <div className="flex-shrink-0 w-9 h-[3.375rem] rounded-md overflow-hidden bg-base-300">
+          {/* Tiny cover */}
+          <div
+            className="flex-shrink-0 w-9 rounded-md overflow-hidden"
+            style={{ height: '3.375rem' }}
+          >
             {coverSrc
               ? <img src={coverSrc} alt={book.title} className="w-full h-full object-cover" loading="lazy" />
-              : <CoverPlaceholder title={book.title} />
+              : <CoverPlaceholder title={book.title} bookId={book.id} />
             }
           </div>
+
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
-            <h3 className="card-title-serif text-sm leading-snug truncate
-                           group-hover:text-primary transition-colors">
+            <h3 className="card-title-serif truncate" style={{ fontSize: 'var(--text-sm)' }}>
               {book.title}
             </h3>
-            <p className="text-xs text-base-content/50 truncate">{book.author}</p>
+            <p className="truncate" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)' }}>
+              {book.author}
+            </p>
             {book.rating ? <StarRow rating={book.rating} /> : null}
           </div>
+
           <div className="flex-shrink-0 flex items-center">
             <span className={status.cls}>{status.label}</span>
           </div>
         </article>
+
         <BookDetailsModal book={book} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       </>
     )
   }
 
-  /* ── GRID VIEW ──────────────────────────────────────────────────── */
+  /* ── GRID VIEW ─────────────────────────────────────────────── */
   return (
     <>
       <article
@@ -111,8 +133,8 @@ export function BookCard({ book, viewMode }: BookCardProps) {
         onKeyDown={(e) => e.key === 'Enter' && setIsModalOpen(true)}
         aria-label={`${book.title} von ${book.author}`}
       >
-        {/* Cover — 2:3 Aspect Ratio */}
-        <div className="relative aspect-[2/3] overflow-hidden rounded-t-[0.55rem]">
+        {/* Cover — 2:3 Aspect Ratio with vignette */}
+        <div className="cover-wrap relative aspect-[2/3] rounded-t-[calc(var(--radius-lg)-1px)]">
           {coverSrc ? (
             <img
               src={coverSrc}
@@ -122,10 +144,10 @@ export function BookCard({ book, viewMode }: BookCardProps) {
               loading="lazy"
             />
           ) : (
-            <CoverPlaceholder title={book.title} />
+            <CoverPlaceholder title={book.title} bookId={book.id} />
           )}
 
-          {/* Status-Chip — nur bei nicht-unread anzeigen, um Clutter zu reduzieren */}
+          {/* Status pill — only non-unread to reduce clutter */}
           {book.status !== 'unread' && (
             <div className="absolute top-1.5 left-1.5">
               <span className={status.cls}>{status.label}</span>
@@ -133,13 +155,23 @@ export function BookCard({ book, viewMode }: BookCardProps) {
           )}
         </div>
 
-        {/* Text-Bereich */}
+        {/* Text area */}
         <div className="px-2.5 pt-2 pb-2.5 flex flex-col gap-0.5">
-          <h3 className="card-title-serif text-xs leading-snug line-clamp-2
-                         group-hover:text-primary transition-colors duration-200">
+          <h3
+            className="card-title-serif line-clamp-2"
+            style={{ fontSize: 'var(--text-xs)', lineHeight: 'var(--leading-snug)' }}
+          >
             {book.title}
           </h3>
-          <p className="text-[0.65rem] text-base-content/45 truncate leading-tight">
+          <p
+            className="truncate"
+            style={{
+              fontSize: '0.65rem',
+              color: 'var(--color-text-muted)',
+              letterSpacing: 'var(--tracking-wide)',
+              lineHeight: 'var(--leading-tight)',
+            }}
+          >
             {book.author}
           </p>
           {book.rating ? (

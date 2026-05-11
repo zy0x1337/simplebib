@@ -16,10 +16,10 @@ function StarRow({ rating }: { rating: number }) {
       {Array.from({ length: 5 }, (_, i) => {
         const n = i + 1
         if (rating >= n)
-          return <Star key={n} className="w-3.5 h-3.5 fill-warning text-warning" />
+          return <Star key={n} className="w-3.5 h-3.5" style={{ fill: 'var(--color-star)', color: 'var(--color-star)' }} />
         if (rating >= n - 0.5)
-          return <StarHalf key={n} className="w-3.5 h-3.5 fill-warning text-warning" />
-        return <Star key={n} className="w-3.5 h-3.5 text-base-content/18" />
+          return <StarHalf key={n} className="w-3.5 h-3.5" style={{ fill: 'var(--color-star)', color: 'var(--color-star)' }} />
+        return <Star key={n} className="w-3.5 h-3.5" style={{ color: 'var(--color-text-faint)' }} />
       })}
     </div>
   )
@@ -33,10 +33,9 @@ export function SeriesCard({ series }: SeriesCardProps) {
     [series.id]
   )
 
-  const totalBooks   = booksInSeries?.length ?? 0
+  const totalBooks    = booksInSeries?.length ?? 0
   const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length ?? 0
   const readingBooks  = booksInSeries?.filter(b => b.status === 'reading').length  ?? 0
-  const progressPct   = totalBooks > 0 ? (finishedBooks / totalBooks) * 100 : 0
 
   const avgRating = booksInSeries && booksInSeries.length > 0
     ? booksInSeries.reduce((s, b) => s + (b.rating ?? 0), 0) / booksInSeries.length
@@ -52,12 +51,15 @@ export function SeriesCard({ series }: SeriesCardProps) {
         onKeyDown={(e) => e.key === 'Enter' && setIsModalOpen(true)}
         aria-label={`Buchreihe: ${series.name}`}
       >
-        {/* Header-Zeile */}
+        {/* Header row */}
         <div className="flex items-start justify-between gap-3">
 
-          {/* Buchanzahl-Block — Zahl als visuelle Aussage, kein Icon-in-Kreis */}
+          {/* Book count — big number, no icon-in-circle */}
           <div className="flex-shrink-0 w-12 text-center">
-            <span className="font-display text-3xl font-bold leading-none text-primary">
+            <span
+              className="font-display font-bold leading-none"
+              style={{ fontSize: 'var(--text-xl)', color: 'var(--color-accent)' }}
+            >
               {totalBooks}
             </span>
             <p className="label-caps mt-0.5">
@@ -65,16 +67,21 @@ export function SeriesCard({ series }: SeriesCardProps) {
             </p>
           </div>
 
-          {/* Titel + Meta */}
+          {/* Name + avg rating */}
           <div className="flex-1 min-w-0">
-            <h2 className="card-title-serif text-base leading-snug truncate
-                           group-hover:text-primary transition-colors duration-200">
+            <h2
+              className="card-title-serif truncate"
+              style={{ fontSize: 'var(--text-base)', lineHeight: 'var(--leading-snug)' }}
+            >
               {series.name}
             </h2>
             {avgRating > 0 && (
               <div className="mt-1.5 flex items-center gap-2">
                 <StarRow rating={avgRating} />
-                <span className="text-xs text-base-content/45 tabular-nums">
+                <span
+                  className="tabular-nums"
+                  style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}
+                >
                   {avgRating.toFixed(1)}
                 </span>
               </div>
@@ -82,45 +89,45 @@ export function SeriesCard({ series }: SeriesCardProps) {
           </div>
 
           <ChevronRight
-            className="flex-shrink-0 w-4 h-4 text-base-content/30
-                       group-hover:text-base-content/60
-                       group-hover:translate-x-0.5
-                       transition-all duration-200 mt-0.5"
+            className="flex-shrink-0 w-4 h-4 mt-0.5 transition-all duration-200
+                       group-hover:translate-x-0.5"
+            style={{ color: 'var(--color-text-faint)' }}
           />
         </div>
 
-        {/* Fortschritt */}
+        {/* Segmented progress bar */}
         {totalBooks > 0 && (
           <div className="flex flex-col gap-2">
-            {/* Progress-Track — geteilt in Segmente statt Balken */}
             <div className="flex gap-0.5 h-1.5">
               {Array.from({ length: totalBooks }, (_, i) => {
-                const bookIdx = i + 1
-                let bg = 'bg-base-300'
-                if (bookIdx <= finishedBooks) bg = 'bg-primary'
-                else if (bookIdx <= finishedBooks + readingBooks) bg = 'bg-secondary/60'
+                const idx = i + 1
+                let bg = 'var(--color-surface-elevated)'
+                if (idx <= finishedBooks)                      bg = 'var(--color-accent)'
+                else if (idx <= finishedBooks + readingBooks)  bg = 'var(--color-reading)'
                 return (
                   <div
                     key={i}
-                    className={`flex-1 rounded-full ${bg} transition-colors duration-300`}
+                    className="flex-1 rounded-full transition-colors duration-300"
+                    style={{ background: bg }}
                   />
                 )
               })}
             </div>
 
-            {/* Legende */}
             <div className="flex items-center gap-3">
-              <span className="label-caps text-primary">
-                {finishedBooks} gelesen
-              </span>
+              {finishedBooks > 0 && (
+                <span className="label-caps" style={{ color: 'var(--color-accent)' }}>
+                  {finishedBooks} gelesen
+                </span>
+              )}
               {readingBooks > 0 && (
-                <span className="label-caps text-secondary">
-                  {readingBooks} aktuell
+                <span className="label-caps" style={{ color: 'var(--color-reading)' }}>
+                  {readingBooks} aktuell
                 </span>
               )}
               {totalBooks - finishedBooks - readingBooks > 0 && (
                 <span className="label-caps">
-                  {totalBooks - finishedBooks - readingBooks} offen
+                  {totalBooks - finishedBooks - readingBooks} offen
                 </span>
               )}
             </div>

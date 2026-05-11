@@ -7,27 +7,44 @@ export function Header() {
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <header className="sticky top-0 z-50 bg-base-100/85 backdrop-blur-xl">
-      <div className="flex items-center justify-between px-4 sm:px-5 h-13">
+    <header
+      className="sticky top-0 z-50"
+      style={{
+        background: 'oklch(from var(--color-bg) l c h / 0.88)',
+        backdropFilter: 'blur(20px) saturate(1.4)',
+        WebkitBackdropFilter: 'blur(20px) saturate(1.4)',
+      }}
+    >
+      <div className="flex items-center justify-between px-4 sm:px-5"
+           style={{ height: 'var(--header-height-mobile)' }}>
 
-        {/* Logo + Titel */}
+        {/* Logo + Title */}
         <div className="flex items-center gap-2">
-          {/* Buchzeichen-Ornament */}
-          <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-            <rect x="3" y="2" width="13" height="18" rx="1.5"
-              stroke="currentColor" strokeWidth="1.4"
-              className="text-primary"
+          {/* Y-shaped book pages — custom SVG logo */}
+          <svg
+            width="22" height="22" viewBox="0 0 32 32" fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            style={{ color: 'var(--color-accent)' }}
+          >
+            <path
+              d="M7 5 L16 15 L25 5"
+              stroke="currentColor" strokeWidth="2.5"
+              strokeLinecap="round" strokeLinejoin="round"
             />
-            <line x1="3" y1="7" x2="16" y2="7"
-              stroke="currentColor" strokeWidth="1.1"
-              className="text-primary" strokeDasharray="1.5 2"
+            <line
+              x1="16" y1="15" x2="16" y2="27"
+              stroke="currentColor" strokeWidth="2.5"
+              strokeLinecap="round"
             />
-            <path d="M16 5 L19 5 L19 17 L16 14"
-              stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"
-              className="text-secondary"
+            <path
+              d="M11 27 L21 27"
+              stroke="currentColor" strokeWidth="1.5"
+              strokeLinecap="round"
+              opacity="0.35"
             />
           </svg>
-          <span className="app-title text-lg sm:text-xl tracking-tight">
+          <span className="app-title">
             YunoBib
           </span>
         </div>
@@ -35,10 +52,19 @@ export function Header() {
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="w-9 h-9 flex items-center justify-center rounded-md
-                     text-base-content/45 hover:text-base-content
-                     hover:bg-base-content/6 active:bg-base-content/10
-                     transition-colors duration-150"
+          className="flex items-center justify-center rounded-md transition-colors"
+          style={{
+            width: '36px', height: '36px',
+            color: 'var(--color-text-muted)',
+          }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text)'
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'oklch(from var(--color-text) l c h / 0.06)'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-text-muted)'
+            ;(e.currentTarget as HTMLButtonElement).style.background = 'transparent'
+          }}
           aria-label={theme === 'light' ? 'Dark Mode aktivieren' : 'Light Mode aktivieren'}
         >
           {theme === 'light'
@@ -48,12 +74,9 @@ export function Header() {
         </button>
       </div>
 
-      {/*
-        Doppelte Trennlinie für Tiefe — erste sehr zart, zweite etwas stärker.
-        Wirkt wie ein Bucheinband-Rand.
-      */}
-      <div className="h-px bg-base-content/5" />
-      <div className="h-px bg-base-content/10" />
+      {/* Double border — depth effect like a book spine edge */}
+      <div style={{ height: '1px', background: 'var(--color-divider)' }} />
+      <div style={{ height: '1px', background: 'var(--color-border)' }} />
     </header>
   )
 }

@@ -9,28 +9,32 @@ const ThemeContext = createContext<{
   theme: Theme
   toggleTheme: () => void
 }>({
-  theme: 'light',
+  theme: 'dark',
   toggleTheme: () => {},
 })
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<Theme>('dark')
   const [mounted, setMounted] = useState(false)
 
-  // Load Theme from IndexedDB
   useEffect(() => {
     const loadTheme = async () => {
+      // Apply system preference immediately before DB loads
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      const initial: Theme = systemDark ? 'dark' : 'light'
+
       await initializeSettings()
       const settings = await db.settings.toArray()
-      if (settings[0]) {
-        setTheme(settings[0].theme)
-      }
+      const saved = settings[0]?.theme as Theme | undefined
+      const resolved = saved ?? initial
+
+      setTheme(resolved)
+      document.documentElement.setAttribute('data-theme', resolved)
       setMounted(true)
     }
     loadTheme()
   }, [])
 
-  // Apply Theme
   useEffect(() => {
     if (mounted) {
       document.documentElement.setAttribute('data-theme', theme)
@@ -40,19 +44,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = async () => {
     const newTheme: Theme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
-    
-    // Save to IndexedDB
     const settings = await db.settings.toArray()
     if (settings[0]) {
       await db.settings.update(settings[0].id!, { theme: newTheme })
     }
   }
 
-  // Prevent Flash of Unstyled Content
-  if (!mounted) {
-    return <>{children}</>
-  }
-
+  // Prevent FOUC — render children immediately, theme attr applied above
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
