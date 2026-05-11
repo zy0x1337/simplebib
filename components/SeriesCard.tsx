@@ -3,121 +3,130 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series } from '@/lib/db'
-import { BookOpen, ChevronRight, Library as LibraryIcon, Star, StarHalf, Star as StarEmpty } from 'lucide-react'
+import { ChevronRight, Star, StarHalf } from 'lucide-react'
 import { SeriesDetailsModal } from './SeriesDetailsModal'
 
 interface SeriesCardProps {
   series: Series
 }
 
-function renderStars(rating?: number) {
-  if (rating === undefined || rating === 0) return null
-  const stars = []
-  for (let i = 1; i <= 5; i++) {
-    if (rating >= i) {
-      stars.push(<Star key={i} className="w-4 h-4 fill-warning text-warning" />)
-    } else if (rating >= i - 0.5) {
-      stars.push(<StarHalf key={i} className="w-4 h-4 fill-warning text-warning" />)
-    } else {
-      stars.push(<StarEmpty key={i} className="w-4 h-4 text-base-content/40" />)
-    }
-  }
-  return <div className="flex gap-0.5">{stars}</div>
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => {
+        const n = i + 1
+        if (rating >= n)
+          return <Star key={n} className="w-3.5 h-3.5 fill-warning text-warning" />
+        if (rating >= n - 0.5)
+          return <StarHalf key={n} className="w-3.5 h-3.5 fill-warning text-warning" />
+        return <Star key={n} className="w-3.5 h-3.5 text-base-content/18" />
+      })}
+    </div>
+  )
 }
 
 export function SeriesCard({ series }: SeriesCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  // Bücher in der Serie laden
   const booksInSeries = useLiveQuery(
     () => db.books.where('seriesId').equals(series.id!).toArray(),
     [series.id]
   )
 
-  // Durchschnittsbewertung berechnen
-  const averageRating = booksInSeries && booksInSeries.length > 0
-    ? booksInSeries.reduce((sum, book) => sum + (book.rating || 0), 0) / booksInSeries.length
-    : 0
+  const totalBooks   = booksInSeries?.length ?? 0
+  const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length ?? 0
+  const readingBooks  = booksInSeries?.filter(b => b.status === 'reading').length  ?? 0
+  const progressPct   = totalBooks > 0 ? (finishedBooks / totalBooks) * 100 : 0
 
-  // Fortschritt berechnen
-  const totalBooks = booksInSeries?.length || 0
-  const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length || 0
-  const readingBooks = booksInSeries?.filter(b => b.status === 'reading').length || 0
+  const avgRating = booksInSeries && booksInSeries.length > 0
+    ? booksInSeries.reduce((s, b) => s + (b.rating ?? 0), 0) / booksInSeries.length
+    : 0
 
   return (
     <>
-      <div
-        className="card bg-base-100 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer group"
+      <article
+        className="book-card cursor-pointer group px-5 py-4 flex flex-col gap-4"
         onClick={() => setIsModalOpen(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setIsModalOpen(true)}
+        aria-label={`Buchreihe: ${series.name}`}
       >
-        <div className="card-body">
-          {/* Header with icon and chevron */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <LibraryIcon className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="card-title text-xl font-display font-semibold text-base-content">
-                  {series.name}
-                </h2>
-                <div className="flex items-center gap-2 text-sm text-base-content/60 mt-1">
-                  <BookOpen className="w-4 h-4" />
-                  <span>{totalBooks} {totalBooks === 1 ? 'Buch' : 'Bücher'} in dieser Reihe</span>
-                </div>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-base-content/40 group-hover:text-base-content transition-colors" />
+        {/* Header-Zeile */}
+        <div className="flex items-start justify-between gap-3">
+
+          {/* Buchanzahl-Block — Zahl als visuelle Aussage, kein Icon-in-Kreis */}
+          <div className="flex-shrink-0 w-12 text-center">
+            <span className="font-display text-3xl font-bold leading-none text-primary">
+              {totalBooks}
+            </span>
+            <p className="label-caps mt-0.5">
+              {totalBooks === 1 ? 'Buch' : 'Bücher'}
+            </p>
           </div>
 
-          {/* Progress section */}
-          {totalBooks > 0 && (
-            <div className="bg-base-200 rounded-lg p-3 mt-2">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-base-content/70">Dein Fortschritt</span>
-                <span className="text-sm font-semibold text-primary">
-                  {finishedBooks}/{totalBooks}
+          {/* Titel + Meta */}
+          <div className="flex-1 min-w-0">
+            <h2 className="card-title-serif text-base leading-snug truncate
+                           group-hover:text-primary transition-colors duration-200">
+              {series.name}
+            </h2>
+            {avgRating > 0 && (
+              <div className="mt-1.5 flex items-center gap-2">
+                <StarRow rating={avgRating} />
+                <span className="text-xs text-base-content/45 tabular-nums">
+                  {avgRating.toFixed(1)}
                 </span>
               </div>
-              <progress 
-                className="progress progress-primary w-full h-2" 
-                value={finishedBooks} 
-                max={totalBooks}
-              ></progress>
-              
-              <div className="flex gap-4 mt-3 text-xs text-base-content/60">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-success"></span>
-                  {finishedBooks} gelesen
-                </span>
-                {readingBooks > 0 && (
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-info"></span>
-                    {readingBooks} in Bearbeitung
-                  </span>
-                )}
-                {totalBooks - finishedBooks - readingBooks > 0 && (
-                  <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-base-300"></span>
-                    {totalBooks - finishedBooks - readingBooks} offen
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Rating */}
-          {averageRating > 0 && (
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-base-200">
-              <span className="text-sm text-base-content/70">Ø Bewertung:</span>
-              {renderStars(averageRating)}
-              <span className="text-sm font-medium text-base-content">
-                {averageRating.toFixed(1)}
-              </span>
-            </div>
-          )}
+          <ChevronRight
+            className="flex-shrink-0 w-4 h-4 text-base-content/30
+                       group-hover:text-base-content/60
+                       group-hover:translate-x-0.5
+                       transition-all duration-200 mt-0.5"
+          />
         </div>
-      </div>
+
+        {/* Fortschritt */}
+        {totalBooks > 0 && (
+          <div className="flex flex-col gap-2">
+            {/* Progress-Track — geteilt in Segmente statt Balken */}
+            <div className="flex gap-0.5 h-1.5">
+              {Array.from({ length: totalBooks }, (_, i) => {
+                const bookIdx = i + 1
+                let bg = 'bg-base-300'
+                if (bookIdx <= finishedBooks) bg = 'bg-primary'
+                else if (bookIdx <= finishedBooks + readingBooks) bg = 'bg-secondary/60'
+                return (
+                  <div
+                    key={i}
+                    className={`flex-1 rounded-full ${bg} transition-colors duration-300`}
+                  />
+                )
+              })}
+            </div>
+
+            {/* Legende */}
+            <div className="flex items-center gap-3">
+              <span className="label-caps text-primary">
+                {finishedBooks} gelesen
+              </span>
+              {readingBooks > 0 && (
+                <span className="label-caps text-secondary">
+                  {readingBooks} aktuell
+                </span>
+              )}
+              {totalBooks - finishedBooks - readingBooks > 0 && (
+                <span className="label-caps">
+                  {totalBooks - finishedBooks - readingBooks} offen
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </article>
 
       {isModalOpen && (
         <SeriesDetailsModal
