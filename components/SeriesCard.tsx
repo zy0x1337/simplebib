@@ -5,6 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series } from '@/lib/db'
 import { ChevronRight, Star, StarHalf } from 'lucide-react'
 import { SeriesDetailsModal } from './SeriesDetailsModal'
+import { AddBookToSeriesModal } from './AddBookToSeriesModal'
 
 interface SeriesCardProps {
   series: Series
@@ -26,7 +27,9 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 export function SeriesCard({ series }: SeriesCardProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen]         = useState(false)
+  // Lifted here so it survives SeriesDetailsModal unmount
+  const [isAddBookOpen, setIsAddBookOpen]     = useState(false)
 
   const booksInSeries = useLiveQuery(
     () => db.books.where('seriesId').equals(series.id!).toArray(),
@@ -41,6 +44,11 @@ export function SeriesCard({ series }: SeriesCardProps) {
     ? booksInSeries.reduce((s, b) => s + (b.rating ?? 0), 0) / booksInSeries.length
     : 0
 
+  const handleOpenAddBook = () => {
+    setIsModalOpen(false)   // close series detail
+    setIsAddBookOpen(true)  // open add-book — state lives here, survives unmount
+  }
+
   return (
     <>
       <article
@@ -53,8 +61,6 @@ export function SeriesCard({ series }: SeriesCardProps) {
       >
         {/* Header row */}
         <div className="flex items-start justify-between gap-3">
-
-          {/* Book count — big number, no icon-in-circle */}
           <div className="flex-shrink-0 w-12 text-center">
             <span
               className="font-display font-bold leading-none"
@@ -63,11 +69,10 @@ export function SeriesCard({ series }: SeriesCardProps) {
               {totalBooks}
             </span>
             <p className="label-caps mt-0.5">
-              {totalBooks === 1 ? 'Buch' : 'Bücher'}
+              {totalBooks === 1 ? 'Buch' : 'B\u00fccher'}
             </p>
           </div>
 
-          {/* Name + avg rating */}
           <div className="flex-1 min-w-0">
             <h2
               className="card-title-serif truncate"
@@ -89,8 +94,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
           </div>
 
           <ChevronRight
-            className="flex-shrink-0 w-4 h-4 mt-0.5 transition-all duration-200
-                       group-hover:translate-x-0.5"
+            className="flex-shrink-0 w-4 h-4 mt-0.5 transition-all duration-200 group-hover:translate-x-0.5"
             style={{ color: 'var(--color-text-faint)' }}
           />
         </div>
@@ -102,14 +106,10 @@ export function SeriesCard({ series }: SeriesCardProps) {
               {Array.from({ length: totalBooks }, (_, i) => {
                 const idx = i + 1
                 let bg = 'var(--color-surface-elevated)'
-                if (idx <= finishedBooks)                      bg = 'var(--color-accent)'
-                else if (idx <= finishedBooks + readingBooks)  bg = 'var(--color-reading)'
+                if (idx <= finishedBooks)                     bg = 'var(--color-accent)'
+                else if (idx <= finishedBooks + readingBooks) bg = 'var(--color-reading)'
                 return (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-full transition-colors duration-300"
-                    style={{ background: bg }}
-                  />
+                  <div key={i} className="flex-1 rounded-full transition-colors duration-300" style={{ background: bg }} />
                 )
               })}
             </div>
@@ -135,13 +135,20 @@ export function SeriesCard({ series }: SeriesCardProps) {
         )}
       </article>
 
-      {isModalOpen && (
-        <SeriesDetailsModal
-          series={series}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
+      {/* Always rendered — isOpen prop controls visibility, not conditional mounting */}
+      <SeriesDetailsModal
+        series={series}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onOpenAddBook={handleOpenAddBook}
+      />
+
+      {/* Lives in SeriesCard so state survives SeriesDetailsModal unmount */}
+      <AddBookToSeriesModal
+        series={series}
+        isOpen={isAddBookOpen}
+        onClose={() => setIsAddBookOpen(false)}
+      />
     </>
   )
 }
