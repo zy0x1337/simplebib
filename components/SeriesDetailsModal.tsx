@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Series, Book } from '@/lib/db'
 import { X, Plus, Trash2, BookOpen, Star, StarHalf, Edit2, Save } from 'lucide-react'
@@ -13,7 +14,6 @@ interface SeriesDetailsModalProps {
   onClose: () => void
 }
 
-/** Cover-Bild mit Blob-URL Lifecycle */
 function BookCover({ book }: { book: Book }) {
   const [src, setSrc] = useState<string | null>(null)
   useEffect(() => {
@@ -64,6 +64,9 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   const [editedName, setEditedName]       = useState(series.name)
   const [isDeleting, setIsDeleting]       = useState(false)
   const [isSavingName, setIsSavingName]   = useState(false)
+  const [mounted, setMounted]             = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const booksInSeries = useLiveQuery(
     () => db.books.where('seriesId').equals(series.id!).toArray()
@@ -79,7 +82,7 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   }
 
   const handleDelete = async () => {
-    if (!confirm(`Buchreihe \u201e${series.name}\u201c wirklich l\u00f6schen?\nB\u00fccher bleiben erhalten.`)) return
+    if (!confirm(`Buchreihe \u201e${series.name}\u201c wirklich löschen?\nBücher bleiben erhalten.`)) return
     setIsDeleting(true)
     try {
       const books = await db.books.where('seriesId').equals(series.id!).toArray()
@@ -92,203 +95,205 @@ export function SeriesDetailsModal({ series, isOpen, onClose }: SeriesDetailsMod
   const STATUS_CLS:   Record<string, string> = { unread: 'status-unread', reading: 'status-reading', finished: 'status-finished' }
   const STATUS_LABEL: Record<string, string> = { unread: 'Ungelesen', reading: 'Lese ich', finished: 'Gelesen' }
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
   const totalBooks    = booksInSeries?.length ?? 0
   const finishedBooks = booksInSeries?.filter(b => b.status === 'finished').length ?? 0
   const readingBooks  = booksInSeries?.filter(b => b.status === 'reading').length  ?? 0
 
-  const isSubModalOpen = isAddBookOpen || !!selectedBook
-  const hiddenStyle: React.CSSProperties = isSubModalOpen ? { visibility: 'hidden', pointerEvents: 'none' } : {}
+  const modal = (
+    <div className="modal-overlay anim-fade-in" onClick={onClose}>
+      <div
+        className="modal-box anim-modal-in"
+        style={{ maxWidth: '480px' }}
+        onClick={e => e.stopPropagation()}
+        role="dialog" aria-modal="true" aria-labelledby="series-details-title"
+      >
+        {/* Handle */}
+        <div className="modal-box__handle">
+          <div className="modal-box__handle-bar" />
+        </div>
 
-  return (
-    <>
-      <div className="modal-overlay anim-fade-in" style={hiddenStyle} onClick={onClose}>
-        <div
-          className="modal-box anim-modal-in"
-          style={{ maxWidth: '480px' }}
-          onClick={e => e.stopPropagation()}
-          role="dialog" aria-modal="true" aria-labelledby="series-details-title"
-        >
-          {/* Handle */}
-          <div className="modal-box__handle">
-            <div className="modal-box__handle-bar" />
-          </div>
+        {/* ── HEADER ────────────────────────────────────── */}
+        <div className="modal-box__header">
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
 
-          {/* ── HEADER ────────────────────────────────────────────────── */}
-          <div className="modal-box__header">
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-
-              {/* Bücher-Anzahl Badge */}
-              <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '3rem', paddingTop: '0.1rem' }}>
-                <span style={{
-                  fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)',
-                  fontWeight: 700, lineHeight: 1, color: 'var(--color-accent)',
-                }}>{totalBooks}</span>
-                <p className="label-caps" style={{ marginTop: '0.15rem' }}>
-                  {totalBooks === 1 ? 'Buch' : 'Bücher'}
-                </p>
-              </div>
-
-              {/* Name + Rating + Fortschritt */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {isEditingName ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                    <input className="input" style={{ flex: 1, fontWeight: 600 }}
-                      value={editedName} onChange={e => setEditedName(e.target.value)}
-                      autoFocus disabled={isSavingName} />
-                    <button onClick={handleSaveName} disabled={isSavingName}
-                      className="btn btn-icon btn-ghost" aria-label="Speichern"
-                      style={{ color: 'var(--color-accent)' }}>
-                      <Save style={{ width: '1rem', height: '1rem' }} />
-                    </button>
-                    <button onClick={() => { setIsEditingName(false); setEditedName(series.name) }}
-                      className="btn btn-icon btn-ghost" aria-label="Abbrechen">
-                      <X style={{ width: '1rem', height: '1rem' }} />
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-                    <h2 id="series-details-title" style={{
-                      fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)',
-                      fontWeight: 400, fontStyle: 'italic',
-                      letterSpacing: 'var(--tracking-tight)',
-                      color: 'var(--color-text)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      lineHeight: 'var(--leading-snug)',
-                    }}>{series.name}</h2>
-                    <button onClick={() => setIsEditingName(true)}
-                      className="btn btn-icon btn-ghost" aria-label="Name bearbeiten"
-                      style={{ flexShrink: 0 }}>
-                      <Edit2 style={{ width: '0.875rem', height: '0.875rem' }} />
-                    </button>
-                  </div>
-                )}
-
-                {/* Gesamtbewertung */}
-                {(series.overallRating ?? 0) > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
-                    <MiniStars rating={series.overallRating} />
-                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                      Ø {series.overallRating?.toFixed(1)}
-                    </span>
-                  </div>
-                )}
-
-                {/* Fortschrittsbalken */}
-                {totalBooks > 0 && (
-                  <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: '0.125rem', height: '0.25rem' }}>
-                    {Array.from({ length: totalBooks }, (_, i) => {
-                      const idx = i + 1
-                      const bg = idx <= finishedBooks ? 'var(--color-accent)'
-                               : idx <= finishedBooks + readingBooks ? 'var(--color-reading)'
-                               : 'var(--color-border)'
-                      return <div key={i} style={{ flex: 1, borderRadius: 'var(--radius-full)', background: bg, transition: 'background var(--transition)' }} />
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* Schließen */}
-              <button onClick={onClose} className="btn btn-icon btn-ghost"
-                style={{ flexShrink: 0, marginTop: '0.1rem' }} aria-label="Schließen">
-                <X style={{ width: '1rem', height: '1rem' }} />
-              </button>
+            {/* Buch-Anzahl Badge */}
+            <div style={{
+              flexShrink: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              minWidth: '3rem', paddingTop: '0.1rem',
+            }}>
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)',
+                fontWeight: 700, lineHeight: 1, color: 'var(--color-accent)',
+              }}>{totalBooks}</span>
+              <p className="label-caps" style={{ marginTop: '0.15rem' }}>
+                {totalBooks === 1 ? 'Buch' : 'Bücher'}
+              </p>
             </div>
-          </div>
 
-          <div className="modal-box__divider" />
+            {/* Name + Rating + Progress */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {isEditingName ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <input className="input" style={{ flex: 1, minWidth: 0, fontWeight: 600 }}
+                    value={editedName} onChange={e => setEditedName(e.target.value)}
+                    autoFocus disabled={isSavingName} />
+                  <button onClick={handleSaveName} disabled={isSavingName}
+                    className="btn btn-icon btn-ghost" aria-label="Speichern"
+                    style={{ flexShrink: 0, color: 'var(--color-accent)' }}>
+                    <Save style={{ width: '1rem', height: '1rem' }} />
+                  </button>
+                  <button onClick={() => { setIsEditingName(false); setEditedName(series.name) }}
+                    className="btn btn-icon btn-ghost" aria-label="Abbrechen" style={{ flexShrink: 0 }}>
+                    <X style={{ width: '1rem', height: '1rem' }} />
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                  <h2 id="series-details-title" style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'var(--text-base)',
+                    fontWeight: 400, fontStyle: 'italic',
+                    letterSpacing: 'var(--tracking-tight)',
+                    color: 'var(--color-text)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    lineHeight: 'var(--leading-snug)',
+                    flex: 1, minWidth: 0,
+                  }}>{series.name}</h2>
+                  <button onClick={() => setIsEditingName(true)}
+                    className="btn btn-icon btn-ghost" aria-label="Name bearbeiten"
+                    style={{ flexShrink: 0 }}>
+                    <Edit2 style={{ width: '0.875rem', height: '0.875rem' }} />
+                  </button>
+                </div>
+              )}
 
-          {/* ── BODY: Bücherliste, scrollbar ────────────────────────────── */}
-          <div className="modal-box__body">
-            {!booksInSeries || booksInSeries.length === 0 ? (
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: 'var(--space-2)', padding: 'var(--space-10) 0',
-                color: 'var(--color-text-faint)',
-              }}>
-                <BookOpen style={{ width: '2rem', height: '2rem' }} />
-                <p style={{ fontSize: 'var(--text-sm)' }}>Noch keine Bücher in dieser Reihe</p>
-              </div>
-            ) : (
-              booksInSeries.map((book, idx) => (
-                <button key={book.id} onClick={() => setSelectedBook(book)}
-                  className="anim-fade-up"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-                    width: '100%', padding: 'var(--space-2) var(--space-2)',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'transparent', border: 'none',
-                    cursor: 'pointer', textAlign: 'left',
-                    transition: 'background var(--transition)',
-                    animationDelay: `${idx * 0.04}s`,
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'oklch(from var(--color-text) l c h / 0.04)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  {/* Band-Nr. */}
-                  <span style={{
-                    flexShrink: 0, width: '1.5rem', textAlign: 'center',
-                    fontFamily: 'var(--font-display)', fontSize: 'var(--text-base)',
-                    fontWeight: 700,
-                    color: 'oklch(from var(--color-accent) l c h / 0.5)',
-                  }}>{book.seriesPosition ?? '–'}</span>
+              {(series.overallRating ?? 0) > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-1)' }}>
+                  <MiniStars rating={series.overallRating} />
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
+                    Ø {series.overallRating?.toFixed(1)}
+                  </span>
+                </div>
+              )}
 
-                  <BookCover book={book} />
+              {totalBooks > 0 && (
+                <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: '0.125rem', height: '0.25rem' }}>
+                  {Array.from({ length: totalBooks }, (_, i) => {
+                    const idx = i + 1
+                    const bg = idx <= finishedBooks ? 'var(--color-accent)'
+                             : idx <= finishedBooks + readingBooks ? 'var(--color-reading)'
+                             : 'var(--color-border)'
+                    return <div key={i} style={{ flex: 1, borderRadius: 'var(--radius-full)', background: bg, transition: 'background var(--transition)' }} />
+                  })}
+                </div>
+              )}
+            </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{
-                      fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)',
-                      fontStyle: 'italic', color: 'var(--color-text)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      lineHeight: 'var(--leading-snug)',
-                    }}>{book.title}</p>
-                    <MiniStars rating={book.rating} />
-                  </div>
-
-                  <span className={STATUS_CLS[book.status]}>{STATUS_LABEL[book.status]}</span>
-                </button>
-              ))
-            )}
-          </div>
-
-          {/* ── FOOTER ─────────────────────────────────────────────────── */}
-          <div className="modal-box__footer">
-            <button
-              onClick={handleDelete} disabled={isDeleting}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
-                padding: 'var(--space-2) var(--space-3)',
-                borderRadius: 'var(--radius-md)',
-                background: 'none', border: 'none',
-                fontSize: 'var(--text-sm)',
-                color: 'oklch(from var(--color-error) l c h / 0.7)',
-                cursor: isDeleting ? 'not-allowed' : 'pointer',
-                transition: 'color var(--transition), background var(--transition)',
-              }}
-              onMouseEnter={e => {
-                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-error)'
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'oklch(from var(--color-error) l c h / 0.08)'
-              }}
-              onMouseLeave={e => {
-                ;(e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.7)'
-                ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
-              }}
-            >
-              <Trash2 style={{ width: '1rem', height: '1rem' }} />
-              {isDeleting ? 'Lösche…' : 'Reihe löschen'}
-            </button>
-
-            <button onClick={() => setIsAddBookOpen(true)} className="btn btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-              <Plus style={{ width: '1rem', height: '1rem' }} />
-              Buch hinzufügen
+            {/* Schließen */}
+            <button onClick={onClose} className="btn btn-icon btn-ghost"
+              style={{ flexShrink: 0, marginTop: '0.1rem' }} aria-label="Schließen">
+              <X style={{ width: '1rem', height: '1rem' }} />
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Sub-Modals */}
+        <div className="modal-box__divider" />
+
+        {/* ── BODY: Bücherliste ─────────────────────────── */}
+        <div className="modal-box__body">
+          {!booksInSeries || booksInSeries.length === 0 ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 'var(--space-2)', padding: 'var(--space-10) 0',
+              color: 'var(--color-text-faint)',
+            }}>
+              <BookOpen style={{ width: '2rem', height: '2rem' }} />
+              <p style={{ fontSize: 'var(--text-sm)' }}>Noch keine Bücher in dieser Reihe</p>
+            </div>
+          ) : (
+            booksInSeries.map((book, idx) => (
+              <button key={book.id} onClick={() => setSelectedBook(book)}
+                className="anim-fade-up"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                  width: '100%', padding: 'var(--space-2)',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'transparent', border: 'none',
+                  cursor: 'pointer', textAlign: 'left',
+                  transition: 'background var(--transition)',
+                  animationDelay: `${idx * 0.04}s`,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'oklch(from var(--color-text) l c h / 0.04)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span style={{
+                  flexShrink: 0, width: '1.5rem', textAlign: 'center',
+                  fontFamily: 'var(--font-display)', fontSize: 'var(--text-base)',
+                  fontWeight: 700,
+                  color: 'oklch(from var(--color-accent) l c h / 0.5)',
+                }}>{book.seriesPosition ?? '–'}</span>
+
+                <BookCover book={book} />
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)',
+                    fontStyle: 'italic', color: 'var(--color-text)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    lineHeight: 'var(--leading-snug)',
+                  }}>{book.title}</p>
+                  <MiniStars rating={book.rating} />
+                </div>
+
+                <span className={STATUS_CLS[book.status]} style={{ flexShrink: 0 }}>{STATUS_LABEL[book.status]}</span>
+              </button>
+            ))
+          )}
+        </div>
+
+        {/* ── FOOTER ────────────────────────────────────── */}
+        <div className="modal-box__footer">
+          <button onClick={handleDelete} disabled={isDeleting}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
+              padding: 'var(--space-2) var(--space-3)',
+              borderRadius: 'var(--radius-md)',
+              background: 'none', border: 'none',
+              fontSize: 'var(--text-sm)',
+              color: 'oklch(from var(--color-error) l c h / 0.7)',
+              cursor: isDeleting ? 'not-allowed' : 'pointer',
+              transition: 'color var(--transition), background var(--transition)',
+            }}
+            onMouseEnter={e => {
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--color-error)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'oklch(from var(--color-error) l c h / 0.08)'
+            }}
+            onMouseLeave={e => {
+              ;(e.currentTarget as HTMLButtonElement).style.color = 'oklch(from var(--color-error) l c h / 0.7)'
+              ;(e.currentTarget as HTMLButtonElement).style.background = 'none'
+            }}
+          >
+            <Trash2 style={{ width: '1rem', height: '1rem' }} />
+            {isDeleting ? 'Lösche…' : 'Reihe löschen'}
+          </button>
+
+          <button onClick={() => setIsAddBookOpen(true)} className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            <Plus style={{ width: '1rem', height: '1rem' }} />
+            Buch hinzufügen
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {createPortal(modal, document.body)}
+      {/* Sub-modals are already portals themselves via their own createPortal */}
       <AddBookToSeriesModal series={series} isOpen={isAddBookOpen} onClose={() => setIsAddBookOpen(false)} />
       {selectedBook && (
         <BookDetailsModal book={selectedBook} isOpen={true} onClose={() => setSelectedBook(null)} />

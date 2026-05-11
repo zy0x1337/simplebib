@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Book, updateSeriesRating } from '@/lib/db'
 import { X, Trash2, Edit2, Save, Star, StarHalf, Upload, BookOpen } from 'lucide-react'
@@ -68,7 +69,10 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
   const [isDeleting, setIsDeleting]           = useState(false)
   const [isSaving, setIsSaving]               = useState(false)
   const [isUploadingCover, setIsUploadingCover] = useState(false)
+  const [mounted, setMounted]                 = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const series = useLiveQuery(
     () => book.seriesId ? db.series.get(book.seriesId) : undefined,
@@ -144,9 +148,9 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
     } finally { setIsDeleting(false) }
   }
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
-  return (
+  const modal = (
     <div className="modal-overlay anim-fade-in" onClick={onClose}>
       <div
         className="modal-box anim-modal-in"
@@ -156,19 +160,20 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
         aria-modal="true"
         aria-labelledby="book-details-title"
       >
-        {/* Handle — mobile only, via CSS */}
+        {/* Handle — mobile only */}
         <div className="modal-box__handle">
           <div className="modal-box__handle-bar" />
         </div>
 
-        {/* ── HEADER: Cover + Titel + Actions ────────────────────────── */}
+        {/* ── HEADER ────────────────────────────────────── */}
         <div className="modal-box__header">
+          {/* Row 1: Cover + Meta + Close */}
           <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
 
             {/* Cover */}
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <div style={{
-                width: '5rem', height: '7.5rem',
+                width: '4.5rem', height: '6.75rem',
                 borderRadius: 'var(--radius-md)',
                 overflow: 'hidden',
                 background: 'var(--color-surface-2)',
@@ -180,27 +185,20 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <BookOpen style={{ width: '1.5rem', height: '1.5rem', color: 'var(--color-text-faint)' }} />
+                    <BookOpen style={{ width: '1.25rem', height: '1.25rem', color: 'var(--color-text-faint)' }} />
                   </div>
                 )}
               </div>
               {isEditing && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingCover}
-                  aria-label="Cover ändern"
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingCover} aria-label="Cover ändern"
                   style={{
                     position: 'absolute', inset: 0,
                     borderRadius: 'var(--radius-md)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: 'oklch(0.05 0.01 60 / 0.65)',
                     border: 'none', cursor: 'pointer', color: 'white',
-                    opacity: 0, transition: 'opacity var(--transition)',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0' }}
-                >
+                  }}>
                   <Upload style={{ width: '1.25rem', height: '1.25rem' }} />
                 </button>
               )}
@@ -208,8 +206,8 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                 style={{ display: 'none' }} onChange={handleFileUpload} disabled={isUploadingCover} />
             </div>
 
-            {/* Info */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            {/* Title / Author / Status — flex: 1, min-width: 0 prevents overflow */}
+            <div style={{ flex: 1, minWidth: 0 }}>
               {isEditing ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                   <input className="input" value={editedTitle}
@@ -231,27 +229,29 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                 <>
                   <h2 id="book-details-title" style={{
                     fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-lg)',
+                    fontSize: 'var(--text-base)',
                     fontStyle: 'italic',
                     fontWeight: 400,
                     letterSpacing: 'var(--tracking-tight)',
                     lineHeight: 'var(--leading-snug)',
                     color: 'var(--color-text)',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
+                    /* Allow text to wrap fully — no clamp */
+                    wordBreak: 'break-word',
                   }}>{book.title}</h2>
-                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
-                    {book.author}
-                  </p>
+                  <p style={{
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--color-text-muted)',
+                    marginTop: 'var(--space-1)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{book.author}</p>
                   {series && (
                     <p style={{
                       fontSize: 'var(--text-xs)', fontWeight: 600,
                       letterSpacing: 'var(--tracking-widest)',
                       textTransform: 'uppercase',
                       color: 'var(--color-accent)',
-                      marginTop: '0.15rem',
+                      marginTop: 'var(--space-1)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {series.name}{book.seriesPosition ? ` · Band ${book.seriesPosition}` : ''}
                     </p>
@@ -264,7 +264,7 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
               )}
             </div>
 
-            {/* Top actions */}
+            {/* Close + Edit — column, no flex shrink needed */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', flexShrink: 0 }}>
               <button onClick={onClose} className="btn btn-icon btn-ghost" aria-label="Schließen">
                 <X style={{ width: '1rem', height: '1rem' }} />
@@ -281,9 +281,8 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
 
         <div className="modal-box__divider" />
 
-        {/* ── BODY: scrollable content ──────────────────────────────── */}
+        {/* ── BODY ──────────────────────────────────────── */}
         <div className="modal-box__body">
-
           {isEditing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
@@ -316,10 +315,9 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <p className="label-caps">Bewertung</p>
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
-                    {editedRating > 0 ? `${editedRating}\u00a0/\u00a05` : '\u2014'}
+                    {editedRating > 0 ? `${editedRating} / 5` : '—'}
                   </span>
                 </div>
-                {/* Star buttons */}
                 <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
                   {Array.from({ length: 5 }, (_, i) => {
                     const full = i + 1, half = i + 0.5
@@ -347,7 +345,6 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                     </button>
                   )}
                 </div>
-                {/* Range fallback */}
                 <input type="range" min="0" max="5" step="0.5" value={editedRating}
                   onChange={e => setEditedRating(parseFloat(e.target.value))}
                   className="bib-range"
@@ -364,10 +361,8 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
                     className="input" style={{ width: '6rem' }} disabled={isSaving} />
                 </div>
               )}
-
             </div>
           ) : (
-            /* View mode */
             <p className="label-caps" style={{ paddingTop: 'var(--space-1)' }}>
               Hinzugefügt {new Date(book.dateAdded).toLocaleDateString('de-DE', {
                 day: 'numeric', month: 'long', year: 'numeric',
@@ -376,11 +371,9 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
           )}
         </div>
 
-        {/* ── FOOTER: sticky, safe-area ─────────────────────────────── */}
+        {/* ── FOOTER ────────────────────────────────────── */}
         <div className="modal-box__footer">
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting || isSaving}
+          <button onClick={handleDelete} disabled={isDeleting || isSaving}
             style={{
               display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
               padding: 'var(--space-2) var(--space-3)',
@@ -406,9 +399,7 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
 
           {isEditing ? (
             <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-              <button onClick={cancelEdit} disabled={isSaving} className="btn btn-ghost">
-                Abbrechen
-              </button>
+              <button onClick={cancelEdit} disabled={isSaving} className="btn btn-ghost">Abbrechen</button>
               <button onClick={handleSave} disabled={isSaving || isUploadingCover} className="btn btn-primary"
                 style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {isSaving ? <Spinner /> : <Save style={{ width: '0.875rem', height: '0.875rem' }} />}
@@ -423,4 +414,6 @@ export function BookDetailsModal({ book, isOpen, onClose }: BookDetailsModalProp
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
