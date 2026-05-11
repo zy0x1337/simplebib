@@ -55,7 +55,7 @@
 
   /* ── BACKGROUNDS ── */
 
-  /* Light: warmes Leinen — dezentes Punktraster + Papier-Rauschen */
+  /* Light: warmes Leinen — dezentes Punktraster */
   [data-theme="light"] body {
     background-color: oklch(var(--b2));
     background-image:
@@ -63,7 +63,7 @@
     background-size: 20px 20px;
   }
 
-  /* Dark: Tinte auf Holz — sehr feines Raster, tiefschwarz */
+  /* Dark: Tinte auf Holz — feines Raster */
   [data-theme="dark"] body {
     background-color: oklch(var(--b1));
     background-image:
@@ -80,44 +80,7 @@
   }
 }
 
-/* ─── TYPOGRAPHY UTILITIES ─────────────────────────────────────────────── */
-
-@utility font-display {
-  font-family: var(--font-display), Georgia, serif;
-}
-
-@utility font-body {
-  font-family: var(--font-body), Georgia, serif;
-}
-
-/* App-Titel: Playfair, kein Gradient-Text */
-@utility app-title {
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 600;
-  font-style: italic;
-  letter-spacing: -0.01em;
-  color: oklch(var(--bc));
-}
-
-/* Serifentitel für Karten */
-@utility card-title-serif {
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 500;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-
-/* Uppercase-Label — fein getracked */
-@utility label-caps {
-  font-family: var(--font-body), Georgia, serif;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: oklch(var(--bc) / 0.45);
-}
-
-/* ─── ANIMATIONS ─────────────────────────────────────────────────────── */
+/* ─── KEYFRAMES ──────────────────────────────────────────────────────────── */
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
@@ -130,8 +93,13 @@
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: translateY(22px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes modalInMobile {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes shimmer {
@@ -139,126 +107,393 @@
   100% { background-position:  200% 0; }
 }
 
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ─── ANIMATION UTILITIES ────────────────────────────────────────────────── */
+
 @utility anim-fade-up {
-  animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  opacity: 0;
+  animation: fadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @utility anim-fade-in {
-  animation: fadeIn 0.3s ease-out forwards;
-  opacity: 0;
+  animation: fadeIn 0.28s ease-out both;
 }
 
+@utility anim-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/*
+  Modal animation:
+  - Mobile (≤640px): slide up from bottom (sheet)
+  - Desktop:         fade + scale from center
+*/
 @utility anim-modal {
-  animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: modalIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Stagger helpers */
-@utility delay-1  { animation-delay: 0.05s; }
-@utility delay-2  { animation-delay: 0.10s; }
-@utility delay-3  { animation-delay: 0.15s; }
-@utility delay-4  { animation-delay: 0.20s; }
-@utility delay-5  { animation-delay: 0.25s; }
-@utility delay-6  { animation-delay: 0.30s; }
-@utility delay-7  { animation-delay: 0.35s; }
-@utility delay-8  { animation-delay: 0.40s; }
-
-/* ─── BOOK CARD ───────────────────────────────────────────────────────── */
-
-@utility book-card {
-  @apply bg-base-100 rounded-lg overflow-hidden cursor-pointer;
-  border: 1px solid oklch(var(--bc) / 0.08);
-  box-shadow: 0 1px 3px oklch(var(--bc) / 0.06);
-  transition: box-shadow 220ms ease, border-color 220ms ease;
+@media (max-width: 639px) {
+  .anim-modal {
+    animation-name: modalInMobile;
+    animation-duration: 0.32s;
+    animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  }
 }
 
-.book-card:hover {
-  border-color: oklch(var(--bc) / 0.18);
-  box-shadow: 0 4px 16px oklch(var(--bc) / 0.10);
+/* Stagger delay helpers — use with anim-fade-up */
+@utility delay-1 { animation-delay: 0.04s; }
+@utility delay-2 { animation-delay: 0.08s; }
+@utility delay-3 { animation-delay: 0.12s; }
+@utility delay-4 { animation-delay: 0.16s; }
+@utility delay-5 { animation-delay: 0.20s; }
+@utility delay-6 { animation-delay: 0.24s; }
+@utility delay-7 { animation-delay: 0.28s; }
+@utility delay-8 { animation-delay: 0.32s; }
+
+/* ─── TYPOGRAPHY UTILITIES ───────────────────────────────────────────────── */
+
+@utility font-display {
+  font-family: var(--font-display), Georgia, serif;
 }
 
-/* ─── STATUS BADGES ──────────────────────────────────────────────────── */
+@utility font-body {
+  font-family: var(--font-body), Georgia, serif;
+}
 
-@utility status-unread {
-  @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5;
-  font-size: 0.6875rem;
+/* App-Titel: kursiv, kein Gradient */
+@utility app-title {
+  font-family: var(--font-display), Georgia, serif;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: oklch(var(--bc) / 0.07);
-  color: oklch(var(--bc) / 0.55);
+  font-style: italic;
+  letter-spacing: -0.01em;
+  color: oklch(var(--bc));
 }
 
-@utility status-reading {
-  @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5;
-  font-size: 0.6875rem;
+/* Serifentitel für Karten & Modals */
+@utility card-title-serif {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+/*
+  Uppercase-Label — für Feldbezeichnungen, Metadaten, Kategorien.
+  Bewusst in Muted-Farbe: soll Struktur geben, nicht dominieren.
+*/
+@utility label-caps {
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 0.6875rem;   /* 11px */
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  background: oklch(var(--in) / 0.14);
-  color: oklch(var(--in));
+  color: oklch(var(--bc) / 0.45);
 }
 
-@utility status-finished {
-  @apply inline-flex items-center gap-1 rounded px-1.5 py-0.5;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: oklch(var(--su) / 0.14);
-  color: oklch(var(--su));
-}
+/* ─── INPUTS ──────────────────────────────────────────────────────────────── */
 
-/* ─── MODALS ─────────────────────────────────────────────────────────── */
-
-@utility modal-panel {
-  @apply bg-base-100 rounded-lg shadow-xl;
-  border: 1px solid oklch(var(--bc) / 0.10);
-  animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* ─── INPUTS ─────────────────────────────────────────────────────────── */
-
+/*
+  bib-input: ersetzt DaisyUI input-bordered.
+  Kein sichtbarer Border per Default — nur subtiler Inset-Shadow.
+  Fokus: Primary-farbener Inset-Ring (kein outline-Sprung).
+*/
 @utility bib-input {
-  @apply input w-full bg-base-200 border-0 font-body;
-  box-shadow: inset 0 0 0 1px oklch(var(--bc) / 0.12);
-  transition: box-shadow 180ms ease;
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: oklch(var(--b2));
+  color: oklch(var(--bc));
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  box-shadow: inset 0 0 0 1px oklch(var(--bc) / 0.11);
+  transition: box-shadow 160ms ease, background 160ms ease;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .bib-input:focus {
   outline: none;
+  background: oklch(var(--b1));
   box-shadow: inset 0 0 0 1.5px oklch(var(--p));
 }
 
-/* ─── BUTTONS ────────────────────────────────────────────────────────── */
+.bib-input::placeholder {
+  color: oklch(var(--bc) / 0.35);
+}
 
+.bib-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Select — gleiche Optik wie bib-input + nativer Pfeil */
+@utility bib-select {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: oklch(var(--b2));
+  color: oklch(var(--bc));
+  font-family: var(--font-body), Georgia, serif;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  box-shadow: inset 0 0 0 1px oklch(var(--bc) / 0.11);
+  transition: box-shadow 160ms ease;
+  /* Eigener Pfeil */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.bib-select:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px oklch(var(--p));
+}
+
+.bib-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── BUTTONS ─────────────────────────────────────────────────────────────── */
+
+/*
+  btn-bib-primary: Primär-Action-Button.
+  Solid Primary-Farbe, kein Gradient.
+  Nutzt display:inline-flex statt DaisyUI-Klassen für saubere Kontrolle.
+*/
 @utility btn-bib-primary {
-  @apply btn btn-primary font-body font-semibold tracking-wide;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: oklch(var(--p));
+  color: oklch(var(--pc));
+  font-family: var(--font-body), Georgia, serif;
   font-size: 0.875rem;
-  letter-spacing: 0.03em;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  white-space: nowrap;
 }
 
+.btn-bib-primary:hover:not(:disabled) {
+  background: oklch(from oklch(var(--p)) calc(l - 0.06) c h);
+  box-shadow: 0 2px 8px oklch(var(--p) / 0.28);
+}
+
+.btn-bib-primary:active:not(:disabled) {
+  background: oklch(from oklch(var(--p)) calc(l - 0.12) c h);
+  box-shadow: none;
+}
+
+.btn-bib-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/*
+  btn-bib-ghost: Ghost-Button für sekundäre Aktionen.
+  Transparent bis Hover, kein Border.
+*/
 @utility btn-bib-ghost {
-  @apply btn btn-ghost font-body;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: transparent;
+  color: oklch(var(--bc) / 0.6);
+  font-family: var(--font-body), Georgia, serif;
   font-size: 0.875rem;
-  color: oklch(var(--bc) / 0.65);
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+  white-space: nowrap;
 }
 
-.btn-bib-ghost:hover {
-  background: oklch(var(--bc) / 0.06);
+.btn-bib-ghost:hover:not(:disabled) {
+  background: oklch(var(--bc) / 0.07);
   color: oklch(var(--bc));
 }
 
-/* ─── DIVIDER ────────────────────────────────────────────────────────── */
+.btn-bib-ghost:active:not(:disabled) {
+  background: oklch(var(--bc) / 0.11);
+}
+
+.btn-bib-ghost:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── BOOK CARD ───────────────────────────────────────────────────────────── */
+
+@utility book-card {
+  background: oklch(var(--b1));
+  border-radius: 0.625rem;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid oklch(var(--bc) / 0.08);
+  box-shadow:
+    0 1px 2px oklch(var(--bc) / 0.04),
+    0 2px 8px oklch(var(--bc) / 0.04);
+  transition:
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.book-card:hover {
+  border-color: oklch(var(--bc) / 0.16);
+  box-shadow:
+    0 2px 6px oklch(var(--bc) / 0.06),
+    0 8px 24px oklch(var(--bc) / 0.09);
+  transform: translateY(-3px);
+}
+
+.book-card:active {
+  transform: translateY(-1px);
+}
+
+/* ─── STATUS BADGES ───────────────────────────────────────────────────────── */
+
+/*
+  Drei Varianten: unread (neutral), reading (info/blau), finished (success/grün).
+  Kompakte Pill-Form, kein Icon — Text genügt.
+*/
+@utility status-badge-base {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.175rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+@utility status-unread {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.175rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: oklch(var(--bc) / 0.07);
+  color: oklch(var(--bc) / 0.52);
+}
+
+@utility status-reading {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.175rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: oklch(var(--in) / 0.13);
+  color: oklch(var(--in));
+}
+
+@utility status-finished {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.175rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: oklch(var(--su) / 0.13);
+  color: oklch(var(--su));
+}
+
+/* ─── MODAL PANEL ─────────────────────────────────────────────────────────── */
+
+/*
+  modal-panel: Container für alle Modals.
+  Auf Mobile: Bottom-Sheet (abgerundete Oberkante).
+  Auf Desktop: zentriertes Panel mit Schatten.
+  Die eigentliche Positionierung (items-end / items-center) übernimmt
+  die umgebende Flex-Container-Klasse im JSX.
+*/
+@utility modal-panel {
+  background: oklch(var(--b1));
+  border: 1px solid oklch(var(--bc) / 0.09);
+  box-shadow:
+    0 4px 16px oklch(var(--bc) / 0.08),
+    0 24px 64px oklch(var(--bc) / 0.14);
+}
+
+/* ─── DIVIDER ──────────────────────────────────────────────────────────────── */
 
 @utility bib-divider {
   height: 1px;
-  background: oklch(var(--bc) / 0.08);
+  background: oklch(var(--bc) / 0.07);
 }
 
-/* ─── SKELETON ───────────────────────────────────────────────────────── */
+/* ─── COVER PLACEHOLDER ──────────────────────────────────────────────────── */
 
-@utility skeleton {
+/*
+  Wenn kein Cover vorhanden: strukturierter leerer Zustand.
+  Gestreiftes Muster statt einfaches Grau — sieht aus wie
+  ein Buchrücken ohne Titel.
+*/
+@utility cover-placeholder {
+  background-color: oklch(var(--b3));
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 3px,
+    oklch(var(--bc) / 0.04) 3px,
+    oklch(var(--bc) / 0.04) 4px
+  );
+}
+
+/* ─── SERIES PROGRESS BAR ────────────────────────────────────────────────── */
+
+/*
+  Segmentierter Fortschrittsbalken — wird per JS/JSX
+  mit individuell gefärbten <div>-Segmenten befüllt.
+  Diese Klasse ist für den Container.
+*/
+@utility series-progress {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+/* ─── SKELETON ────────────────────────────────────────────────────────────── */
+
+@utility skeleton-shimmer {
   background: linear-gradient(
     90deg,
     oklch(var(--b3)) 25%,
@@ -270,10 +505,11 @@
   border-radius: 4px;
 }
 
-/* ─── PROGRESS ───────────────────────────────────────────────────────── */
+/* ─── READING PROGRESS ───────────────────────────────────────────────────── */
 
 @utility reading-progress {
-  @apply h-1 rounded-full;
+  height: 0.25rem;
+  border-radius: 9999px;
   background: linear-gradient(
     90deg,
     oklch(var(--p)),
