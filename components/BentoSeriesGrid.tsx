@@ -268,8 +268,8 @@ export function BentoSeriesGrid({ series }: BentoSeriesGridProps) {
 
   return (
     <div
-      className="grid grid-cols-2 sm:grid-cols-4"
-      style={{ gap: 'clamp(6px, 1.2vw, 10px)', overflow: 'hidden' }}
+      className="grid grid-cols-2 sm:grid-cols-4 overflow-hidden"
+      style={{ gap: 'clamp(6px, 1.2vw, 10px)', width: '100%', minWidth: 0 }}
     >
       {series.map((s, i) => {
         // First item always featured, every 6th after that

@@ -67,13 +67,12 @@ function FeaturedCard({ book }: { book: Book }) {
           cursor: 'pointer',
           border: '1px solid var(--color-border)',
           boxShadow: 'var(--shadow-sm)',
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'flex', flexDirection: 'column',
           justifyContent: 'flex-end',
           background: spine.bg,
-          height: '100%',
           // Fluid height: shorter on mobile, taller on desktop
           minHeight: 'clamp(150px, 28vw, 260px)',
+          height: 'clamp(150px, 28vw, 260px)',
         }}
         onMouseDown={e => {
           const el = e.currentTarget as HTMLElement
@@ -343,7 +342,7 @@ function WideCard({ book }: { book: Book }) {
           setTimeout(() => { el.style.background = '' }, 120)
         }}
         style={{
-          display: 'flex', alignItems: 'stretch', height: '100%',
+          display: 'flex', alignItems: 'stretch',
           minHeight: 'clamp(44px, 8vw, 56px)',
         }}
       >
@@ -457,11 +456,8 @@ export function RecentBooksGrid({ books }: RecentBooksGridProps) {
 
   return (
     <div
-      className="grid grid-cols-2 sm:grid-cols-4"
-      style={{
-        gap: 'clamp(6px, 1.2vw, 10px)',
-        overflow: 'hidden',
-      }}
+      className="grid grid-cols-2 sm:grid-cols-4 overflow-hidden"
+      style={{ gap: 'clamp(6px, 1.2vw, 10px)', width: '100%', minWidth: 0 }}
     >
       {/* Featured: full-width mobile (span-2 in 2-col), 2×2 desktop (span-2 + row-span-2 in 4-col) */}
       <div

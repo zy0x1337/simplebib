@@ -56,8 +56,7 @@ function FeaturedBookCard({ book }: { book: Book }) {
           background: spine.bg,
           display: 'flex', flexDirection: 'column',
           justifyContent: 'flex-end',
-          height: '100%',
-          minHeight: 'clamp(120px, 18vw, 180px)',
+          height: 'clamp(140px, 25vw, 200px)',
         }}
         onMouseDown={e => {
           const el = e.currentTarget as HTMLElement
@@ -168,8 +167,8 @@ export function BentoBooksGrid({ books }: BentoBooksGridProps) {
 
   return (
     <div
-      className="grid grid-cols-2 sm:grid-cols-4"
-      style={{ gap: 'clamp(6px, 1.2vw, 10px)', overflow: 'hidden' }}
+      className="grid grid-cols-2 sm:grid-cols-4 overflow-hidden"
+      style={{ gap: 'clamp(6px, 1.2vw, 10px)', width: '100%', minWidth: 0 }}
     >
       {books.map((book, i) => {
         // Featured pattern: every 5th item (0, 5, 10, …) gets featured
