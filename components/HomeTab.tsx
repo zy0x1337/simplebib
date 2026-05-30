@@ -2,7 +2,7 @@
 
 import { Book, Series } from '@/lib/db'
 import { HomeStats } from '@/components/HomeStats'
-import { BookCard } from '@/components/BookCard'
+import { RecentBooksGrid } from '@/components/RecentBooksGrid'
 import { SeriesCard } from '@/components/SeriesCard'
 
 interface HomeTabProps {
@@ -25,7 +25,7 @@ export function HomeTab({ recentBooks, recentSeries, onTabChange }: HomeTabProps
       {/* Stats */}
       <HomeStats />
 
-      {/* Recently added books */}
+      {/* Recently added books — Bento Grid */}
       {recentBooks.length > 0 && (
         <section>
           <div style={{
@@ -55,17 +55,7 @@ export function HomeTab({ recentBooks, recentSeries, onTabChange }: HomeTabProps
               Alle ansehen →
             </button>
           </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 'var(--space-2)',
-          }} className="sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
-            {recentBooks.map((book, i) => (
-              <div key={book.id} className="anim-fade-up" style={{ animationDelay: `${i * 0.04}s` }}>
-                <BookCard book={book} viewMode="grid" />
-              </div>
-            ))}
-          </div>
+          <RecentBooksGrid books={recentBooks} />
         </section>
       )}
 
