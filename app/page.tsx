@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, Series } from '@/lib/db'
+import { db, Book, Series } from '@/lib/db'
 import { BookSearch } from '@/components/BookSearch'
 import { AddBookModal } from '@/components/AddBookModal'
 import { Header } from '@/components/Header'
-import { BookCard } from '@/components/BookCard'
-import { SeriesCard } from '@/components/SeriesCard'
-import { AddBookButton } from '@/components/AddBookButton'
 import { AddSeriesModal } from '@/components/AddSeriesModal'
-import { HomeStats } from '@/components/HomeStats'
-import { BookPlus, Library, Search, BookOpen, Plus, LibraryBig, LayoutDashboard } from 'lucide-react'
+import { AddBookButton } from '@/components/AddBookButton'
+import { EmptyState } from '@/components/EmptyState'
+import { HomeTab } from '@/components/HomeTab'
+import { BooksTab } from '@/components/BooksTab'
+import { SeriesTab } from '@/components/SeriesTab'
+import { BookPlus, Library, Search, BookOpen, LibraryBig, LayoutDashboard } from 'lucide-react'
 
 type ActiveTab = 'home' | 'books' | 'series'
 
@@ -19,25 +20,13 @@ export default function HomePage() {
   const [activeTab, setActiveTab]                   = useState<ActiveTab>('home')
   const [isSeriesModalOpen, setIsSeriesModalOpen]   = useState(false)
   const [isAddBookOpen, setIsAddBookOpen]           = useState(false)
-  const [sortedSeries, setSortedSeries]             = useState<Series[]>([])
   const [preFillBookData, setPreFillBookData]       = useState<{ title: string; authors: string; coverUrl: string } | null>(null)
   const [showSearch, setShowSearch]                 = useState(false)
 
   const allBooks  = useLiveQuery(() => db.books.toArray())
   const allSeries = useLiveQuery(() => db.series.toArray())
 
-  useEffect(() => {
-    if (!allSeries) return
-    const sorted = [...allSeries].sort((a, b) => {
-      if (b.overallRating === undefined) return -1
-      if (a.overallRating === undefined) return  1
-      return b.overallRating - a.overallRating
-    })
-    setSortedSeries(sorted)
-  }, [allSeries])
-
-  const standaloneBooks = allBooks?.filter(b => !b.seriesId)
-
+  // Derived data for HomeTab
   const recentBooks = allBooks
     ? [...allBooks]
         .sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
@@ -87,56 +76,13 @@ export default function HomePage() {
   /* ── Empty State ───────────────────────────────────────────── */
   if (allBooks.length === 0 && allSeries.length === 0) {
     return (
-      <div style={{ minHeight: '100svh', background: 'var(--color-bg)' }} className="anim-fade-in">
+      <div style={{ minHeight: '100svh', background: 'var(--color-bg)', position: 'relative' }}>
         <Header />
-        <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-12) var(--space-5)' }} className="page-content">
-          <div style={{ maxWidth: '20rem', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 'var(--space-6)' }}>
-
-            <div className="anim-scale-in">
-              <svg width="64" height="64" viewBox="0 0 72 72" fill="none" aria-hidden="true">
-                <rect x="10" y="44" width="38" height="10" rx="2"
-                  stroke="var(--color-accent)" strokeWidth="1.5" opacity="0.4"
-                  transform="rotate(-4 10 44)" />
-                <rect x="14" y="30" width="36" height="12" rx="2"
-                  stroke="var(--color-accent)" strokeWidth="1.5" opacity="0.6" />
-                <rect x="16" y="16" width="34" height="12" rx="2"
-                  stroke="var(--color-accent)" strokeWidth="1.5"
-                  transform="rotate(3 16 16)" />
-                <path d="M48 16 L48 10 L52 12 L56 10 L56 16"
-                  stroke="var(--color-star)" strokeWidth="1.3" strokeLinejoin="round" />
-              </svg>
-            </div>
-
-            <div className="anim-fade-up delay-1">
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', fontStyle: 'italic', fontWeight: 300, marginBottom: 'var(--space-2)', lineHeight: 'var(--leading-tight)', color: 'var(--color-text)' }}>
-                Deine Bibliothek
-              </h2>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-                Noch leer — aber das ändert sich gleich.
-              </p>
-            </div>
-
-            <div style={{ width: '100%' }} className="anim-fade-up delay-2">
-              <BookSearch onBookSelect={handleBookSelect} />
-            </div>
-
-            <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center' }} className="anim-fade-up delay-3">
-              <button className="btn-bib-primary" onClick={() => setIsAddBookOpen(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <Plus style={{ width: '1rem', height: '1rem' }} />
-                Buch hinzufügen
-              </button>
-              <button
-                className="btn-bib-ghost"
-                style={{ border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-                onClick={() => setIsSeriesModalOpen(true)}
-              >
-                <Library style={{ width: '1rem', height: '1rem' }} />
-                Reihe anlegen
-              </button>
-            </div>
-          </div>
-        </div>
+        <EmptyState
+          onBookSelect={handleBookSelect}
+          onAddBook={() => setIsAddBookOpen(true)}
+          onAddSeries={() => setIsSeriesModalOpen(true)}
+        />
 
         <AddSeriesModal isOpen={isSeriesModalOpen} onClose={() => setIsSeriesModalOpen(false)} />
         <AddBookModal isOpen={isAddBookOpen} onClose={() => setIsAddBookOpen(false)} />
@@ -183,184 +129,32 @@ export default function HomePage() {
             onClick={() => setActiveTab('books')}
           >
             Bücher
-            <span className="bib-tab-count">{standaloneBooks?.length ?? 0}</span>
+            <span className="bib-tab-count">{allBooks.filter(b => !b.seriesId).length}</span>
           </button>
           <button
             className={`bib-tab ${activeTab === 'series' ? 'active' : ''}`}
             onClick={() => setActiveTab('series')}
           >
             Reihen
-            <span className="bib-tab-count">{sortedSeries.length}</span>
+            <span className="bib-tab-count">{allSeries.length}</span>
           </button>
         </div>
 
-        {/* ── HOME TAB ─────────────────────────────────────── */}
+        {/* ── TABS CONTENT ─────────────────────────────────── */}
         {activeTab === 'home' && (
-          <div
-            className="anim-fade-in"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--space-6)',
-              // ensure last section scrolls fully above bottom-nav on mobile
-              paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 8px))',
-            }}
-          >
-            {/* Stats */}
-            <HomeStats />
-
-            {/* Zuletzt hinzugefügte Bücher */}
-            {recentBooks.length > 0 && (
-              <section>
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  marginBottom: 'var(--space-3)',
-                }}>
-                  <h3 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-base)',
-                    fontStyle: 'italic',
-                    fontWeight: 400,
-                    color: 'var(--color-text)',
-                  }}>
-                    Zuletzt hinzugefügt
-                  </h3>
-                  <button
-                    onClick={() => setActiveTab('books')}
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      color: 'var(--color-accent)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      letterSpacing: 'var(--tracking-wide)',
-                    }}
-                  >
-                    Alle ansehen →
-                  </button>
-                </div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: 'var(--space-3)',
-                }} className="sm:grid-cols-6">
-                  {recentBooks.map((book, i) => (
-                    <div key={book.id} className="anim-fade-up" style={{ animationDelay: `${i * 0.04}s` }}>
-                      <BookCard book={book} viewMode="grid" />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Reihen */}
-            {recentSeries.length > 0 && (
-              <section>
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  marginBottom: 'var(--space-3)',
-                }}>
-                  <h3 style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: 'var(--text-base)',
-                    fontStyle: 'italic',
-                    fontWeight: 400,
-                    color: 'var(--color-text)',
-                  }}>
-                    Buchreihen
-                  </h3>
-                  <button
-                    onClick={() => setActiveTab('series')}
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      color: 'var(--color-accent)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      letterSpacing: 'var(--tracking-wide)',
-                    }}
-                  >
-                    Alle ansehen →
-                  </button>
-                </div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr',
-                  gap: 'var(--space-3)',
-                }} className="sm:grid-cols-2">
-                  {recentSeries.map((series, i) => (
-                    <div key={series.id} className="anim-fade-up" style={{ animationDelay: `${i * 0.04}s` }}>
-                      <SeriesCard series={series} />
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+          <HomeTab
+            recentBooks={recentBooks}
+            recentSeries={recentSeries}
+            onTabChange={(tab) => setActiveTab(tab)}
+          />
         )}
 
-        {/* ── BÜCHER TAB ──────────────────────────────────── */}
         {activeTab === 'books' && (
-          standaloneBooks && standaloneBooks.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-3)' }}
-              className="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-            >
-              {standaloneBooks.map((book, index) => (
-                <div key={book.id} className="anim-fade-up" style={{ animationDelay: `${Math.min(index * 0.05, 0.4)}s` }}>
-                  <BookCard book={book} viewMode="grid" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-12) 0', textAlign: 'center' }}>
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true" style={{ color: 'var(--color-text-faint)' }}>
-                <rect x="6" y="5" width="22" height="30" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="6" y1="12" x2="28" y2="12" stroke="currentColor" strokeWidth="1" strokeDasharray="2 3" />
-                <line x1="10" y1="18" x2="24" y2="18" stroke="currentColor" strokeWidth="1" />
-                <line x1="10" y1="22" x2="20" y2="22" stroke="currentColor" strokeWidth="1" />
-              </svg>
-              <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 'var(--text-base)', color: 'var(--color-text-faint)' }}>
-                Noch keine Einzelbücher
-              </p>
-              <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>
-                Alle Bücher sind in Reihen — oder füge jetzt eines hinzu.
-              </p>
-            </div>
-          )
+          <BooksTab onAddBook={() => setIsAddBookOpen(true)} />
         )}
 
-        {/* ── REIHEN TAB ───────────────────────────────────── */}
         {activeTab === 'series' && (
-          sortedSeries.length > 0 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--space-3)' }}
-              className="sm:grid-cols-2 lg:grid-cols-3"
-            >
-              {sortedSeries.map((series, index) => (
-                <div key={series.id} className="anim-fade-up" style={{ animationDelay: `${Math.min(index * 0.05, 0.4)}s` }}>
-                  <SeriesCard series={series} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-12) 0', textAlign: 'center' }}>
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true" style={{ color: 'var(--color-text-faint)' }}>
-                <rect x="4"  y="8"  width="8" height="24" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="16" y="6"  width="8" height="28" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="28" y="10" width="8" height="22" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-              <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 'var(--text-base)', color: 'var(--color-text-faint)' }}>
-                Noch keine Reihen
-              </p>
-              <button
-                className="btn-bib-primary"
-                style={{ marginTop: 'var(--space-1)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)' }}
-                onClick={() => setIsSeriesModalOpen(true)}
-              >
-                <Library style={{ width: '1rem', height: '1rem' }} />
-                Erste Reihe erstellen
-              </button>
-            </div>
-          )
+          <SeriesTab onAddSeries={() => setIsSeriesModalOpen(true)} />
         )}
       </div>
 
