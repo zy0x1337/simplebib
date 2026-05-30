@@ -57,9 +57,9 @@ export function HomeTab({ recentBooks, recentSeries, onTabChange }: HomeTabProps
           </div>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 'var(--space-3)',
-          }} className="sm:grid-cols-6">
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 'var(--space-2)',
+          }} className="sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
             {recentBooks.map((book, i) => (
               <div key={book.id} className="anim-fade-up" style={{ animationDelay: `${i * 0.04}s` }}>
                 <BookCard book={book} viewMode="grid" />
