@@ -36,74 +36,87 @@ export function AddSeriesModal({ isOpen, onClose }: AddSeriesModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      {/* Backdrop */}
+    <div className="modal-overlay anim-fade-in" onClick={onClose}>
       <div
-        className="absolute inset-0 bg-base-content/30 backdrop-blur-sm anim-fade-in"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div className="modal-panel relative w-full sm:max-w-sm
-                      rounded-t-2xl sm:rounded-lg">
-
-        {/* Handle (mobile) */}
-        <div className="sm:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-base-content/20" />
+        className="modal-box anim-modal-in"
+        style={{ maxWidth: '400px' }}
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-series-title"
+      >
+        {/* Drag handle */}
+        <div className="modal-box__handle">
+          <div className="modal-box__handle-bar" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <div className="flex items-center gap-2.5">
-            <BookMarked className="w-4 h-4 text-primary" />
-            <h2 className="font-display text-lg font-semibold">Neue Buchreihe</h2>
+        <div className="modal-box__header">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <BookMarked style={{ width: '1rem', height: '1rem', color: 'var(--color-accent)' }} />
+              <h2 id="add-series-title" style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'var(--text-xl)',
+                fontWeight: 400,
+                fontStyle: 'italic',
+                letterSpacing: 'var(--tracking-tight)',
+                color: 'var(--color-text)',
+              }}>
+                Neue Buchreihe
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="btn btn-icon btn-ghost"
+              aria-label="Schließen"
+            >
+              <X style={{ width: '1rem', height: '1rem' }} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="w-8 h-8 flex items-center justify-center rounded-md
-                       text-base-content/40 hover:text-base-content hover:bg-base-content/6
-                       transition-colors"
-            aria-label="Schließen"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
-        <div className="bib-divider mx-5" />
+        <div className="modal-box__divider" />
 
-        <form onSubmit={handleSubmit} className="px-5 pt-4 pb-6 flex flex-col gap-4">
+        <div className="modal-box__body">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+              <label className="label-caps">Name der Reihe *</label>
+              <input
+                className="bib-input"
+                placeholder="z. B. Herr der Ringe"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                autoFocus
+                disabled={isLoading}
+              />
+            </div>
+          </form>
+        </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="label-caps">Name der Reihe *</label>
-            <input
-              className="bib-input"
-              placeholder="z. B. Herr der Ringe"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-              autoFocus
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} disabled={isLoading}
-              className="btn-bib-ghost flex-1">
-              Abbrechen
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || !name.trim()}
-              className="btn-bib-primary flex-1"
-            >
-              {isLoading
-                ? <span className="loading loading-spinner loading-xs" />
-                : 'Erstellen'
-              }
-            </button>
-          </div>
-        </form>
+        <div className="modal-box__footer">
+          <button type="button" onClick={onClose} disabled={isLoading}
+            className="btn btn-ghost" style={{ flex: 1 }}>
+            Abbrechen
+          </button>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={isLoading || !name.trim()}
+            className="btn btn-primary" style={{ flex: 1 }}
+          >
+            {isLoading ? (
+              <span style={{
+                display: 'inline-block', width: '1rem', height: '1rem',
+                border: '2px solid var(--color-text-inverse)',
+                borderTopColor: 'transparent', borderRadius: '50%',
+                animation: 'spin 0.7s linear infinite',
+              }} aria-label="Lädt…" />
+            ) : 'Erstellen'}
+          </button>
+        </div>
       </div>
     </div>
   )

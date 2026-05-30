@@ -131,6 +131,11 @@ export function BookCard({ book, viewMode }: BookCardProps) {
     <>
       <article
         className="book-card group"
+        onMouseDown={e => {
+          const card = e.currentTarget as HTMLElement
+          card.style.background = 'var(--color-surface-accent)'
+          setTimeout(() => { card.style.background = '' }, 120)
+        }}
         onClick={() => setIsModalOpen(true)}
         role="button"
         tabIndex={0}
