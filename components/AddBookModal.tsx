@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Book, updateSeriesRating } from '@/lib/db'
-import { X, Upload, Link as LinkIcon, Star } from 'lucide-react'
+import { X, Upload, Link as LinkIcon, Star, StarHalf } from 'lucide-react'
 import { compressImage } from '@/lib/imageUtils'
 
 interface AddBookModalProps {
@@ -435,36 +435,78 @@ export function AddBookModal({ isOpen, onClose, preFill }: AddBookModalProps) {
                   style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'center', padding: 'var(--space-1) 0' }}
                   onMouseLeave={() => setHoverRating(0)}
                 >
+                  {/* Inline half-fill SVG def for stars */}
+                  <svg width="0" height="0" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="half-fill">
+                        <stop offset="50%" stopColor="var(--color-star)" />
+                        <stop offset="50%" stopColor="transparent" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
                   {Array.from({ length: 5 }, (_, i) => {
-                    const n = i + 1
-                    const filled = displayRating >= n
-                    const half   = displayRating >= n - 0.5 && displayRating < n
+                    const full = i + 1
+                    const half = i + 0.5
+                    const filled = displayRating >= full
+                    const halfFilled = !filled && displayRating >= half
                     return (
-                      <button
-                        key={n}
-                        type="button"
-                        disabled={isLoading}
-                        aria-label={`${n} Sterne`}
-                        style={{
-                          background: 'none', border: 'none',
-                          padding: 'var(--space-1)',
-                          cursor: isLoading ? 'not-allowed' : 'pointer',
-                          transition: 'transform var(--transition)',
-                        }}
-                        onMouseEnter={() => setHoverRating(n)}
-                        onClick={() => setRating(rating === n ? 0 : n)}
-                      >
-                        <Star
+                      <div key={i} style={{ position: 'relative', width: '1.5rem', height: '1.5rem' }}>
+                        {/* Left half → half star */}
+                        <button
+                          type="button" disabled={isLoading}
+                          onClick={() => setRating(r => r === half ? 0 : half)}
+                          onMouseEnter={() => setHoverRating(half)}
                           style={{
-                            width: '1.5rem', height: '1.5rem',
-                            color: (filled || half) ? 'var(--color-star)' : 'var(--color-text-faint)',
-                            fill: filled ? 'var(--color-star)' : half ? 'url(#half-fill)' : 'none',
-                            transition: 'color var(--transition), fill var(--transition)',
+                            position: 'absolute', left: 0, top: 0, bottom: 0,
+                            width: '50%', background: 'none', border: 'none',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            padding: 0, zIndex: 1,
                           }}
+                          aria-label={`${half} Sterne`}
                         />
-                      </button>
+                        {/* Right half → full star */}
+                        <button
+                          type="button" disabled={isLoading}
+                          onClick={() => setRating(r => r === full ? 0 : full)}
+                          onMouseEnter={() => setHoverRating(full)}
+                          style={{
+                            position: 'absolute', right: 0, top: 0, bottom: 0,
+                            width: '50%', background: 'none', border: 'none',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            padding: 0, zIndex: 1,
+                          }}
+                          aria-label={`${full} Sterne`}
+                        />
+                        {halfFilled ? (
+                          <StarHalf style={{
+                            width: '1.5rem', height: '1.5rem',
+                            fill: 'var(--color-star)', color: 'var(--color-star)',
+                            pointerEvents: 'none',
+                            transition: 'transform var(--transition)',
+                          }} />
+                        ) : (
+                          <Star style={{
+                            width: '1.5rem', height: '1.5rem',
+                            fill: filled ? 'var(--color-star)' : 'none',
+                            color: filled ? 'var(--color-star)' : 'var(--color-text-faint)',
+                            pointerEvents: 'none',
+                            transition: 'fill var(--transition), color var(--transition)',
+                          }} />
+                        )}
+                      </div>
                     )
                   })}
+                  {displayRating > 0 && (
+                    <button type="button" onClick={() => setRating(0)}
+                      style={{
+                        marginLeft: 'var(--space-1)', fontSize: 'var(--text-xs)',
+                        color: 'var(--color-text-faint)', background: 'none',
+                        border: 'none', cursor: 'pointer',
+                        padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)',
+                      }}>
+                      zurücksetzen
+                    </button>
+                  )}
                 </div>
 
                 <input
