@@ -91,48 +91,79 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
   }
 
   return (
-    <div className="mb-6">
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4
-                             text-base-content/35 pointer-events-none" />
+    <div style={{ marginBottom: 'var(--space-6)' }}>
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search style={{
+            position: 'absolute', left: '0.75rem', top: '50%',
+            transform: 'translateY(-50%)', width: '1rem', height: '1rem',
+            color: 'var(--color-text-faint)', pointerEvents: 'none',
+          }} />
           <input
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="ISBN, Titel oder Autor…"
             disabled={isLoading}
-            className="bib-input pl-9 pr-9"
+            className="bib-input"
+            style={{ paddingLeft: '2.25rem', paddingRight: query ? '2.25rem' : undefined }}
           />
           {query && (
             <button type="button" onClick={handleClear}
-              className="absolute right-3 top-1/2 -translate-y-1/2
-                         text-base-content/30 hover:text-base-content/70 transition-colors"
+              style={{
+                position: 'absolute', right: '0.75rem', top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none', border: 'none',
+                color: 'var(--color-text-faint)', cursor: 'pointer',
+                padding: 0, display: 'flex',
+              }}
               aria-label="Eingabe löschen">
-              <X className="w-3.5 h-3.5" />
+              <X style={{ width: '0.875rem', height: '0.875rem' }} />
             </button>
           )}
         </div>
         <button type="submit" disabled={isLoading || !query.trim()}
-          className="btn-bib-primary min-w-[5.5rem]">
-          {isLoading
-            ? <span className="loading loading-spinner loading-xs" />
-            : 'Suchen'
-          }
+          className="btn-bib-primary" style={{ minWidth: '5.5rem' }}>
+          {isLoading ? (
+            <span style={{
+              display: 'inline-block', width: '1rem', height: '1rem',
+              border: '2px solid var(--color-text-inverse)',
+              borderTopColor: 'transparent', borderRadius: '50%',
+              animation: 'spin 0.7s linear infinite',
+            }} aria-label="Lädt…" />
+          ) : 'Suchen'}
         </button>
       </form>
 
       {error && (
-        <div className="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-lg
-                        bg-error/8 border border-error/20">
-          <AlertCircle className="w-4 h-4 text-error mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-error/90">{error}</p>
+        <div style={{
+          marginTop: 'var(--space-3)',
+          display: 'flex', alignItems: 'flex-start', gap: 'var(--space-2)',
+          padding: '0.625rem 0.75rem',
+          borderRadius: 'var(--radius-md)',
+          background: 'oklch(from var(--color-error) l c h / 0.10)',
+          border: '1px solid oklch(from var(--color-error) l c h / 0.18)',
+        }}>
+          <AlertCircle style={{
+            width: '1rem', height: '1rem',
+            color: 'var(--color-error)', marginTop: '0.125rem',
+            flexShrink: 0,
+          }} />
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'oklch(from var(--color-error) l c h / 0.85)', lineHeight: 'var(--leading-snug)' }}>
+              {error}
+            </p>
             {lastQuery && (
               <button type="button" onClick={handleRetry} disabled={isLoading}
-                className="mt-1.5 flex items-center gap-1 text-xs text-error/70
-                           hover:text-error transition-colors">
-                <RefreshCw className="w-3 h-3" />
+                style={{
+                  marginTop: 'var(--space-1)',
+                  display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
+                  fontSize: 'var(--text-xs)',
+                  color: 'oklch(from var(--color-error) l c h / 0.65)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  padding: 0,
+                }}>
+                <RefreshCw style={{ width: '0.75rem', height: '0.75rem' }} />
                 Nochmal versuchen
               </button>
             )}
@@ -141,39 +172,76 @@ export function BookSearch({ onBookSelect }: BookSearchProps) {
       )}
 
       {showResults && results.length > 0 && (
-        <div className="mt-2 bg-base-100 rounded-lg overflow-hidden border border-base-content/8
-                        shadow-lg max-h-[420px] overflow-y-auto anim-fade-in">
-          <div className="px-4 py-2.5 border-b border-base-content/8
-                          flex items-center justify-between">
+        <div style={{
+          marginTop: 'var(--space-2)',
+          background: 'var(--color-surface)',
+          borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+          border: '1px solid var(--color-border)',
+          boxShadow: 'var(--shadow-md)',
+          maxHeight: '420px',
+          overflowY: 'auto',
+        }} className="anim-fade-in">
+          {/* Results header */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '0.625rem var(--space-4)',
+            borderBottom: '1px solid var(--color-divider)',
+          }}>
             <span className="label-caps">{results.length} Ergebnisse</span>
             <button onClick={handleClear}
-              className="text-base-content/35 hover:text-base-content/70 transition-colors text-xs">
+              style={{
+                background: 'none', border: 'none',
+                fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)',
+                cursor: 'pointer',
+              }}>
               Schließen
             </button>
           </div>
+          {/* Results list */}
           {results.map((book, i) => (
             <button key={i} onClick={() => handleSelect(book)}
-              className="w-full flex gap-3 px-4 py-3 text-left
-                         hover:bg-base-content/4 border-b border-base-content/5 last:border-0
-                         transition-colors duration-150 group">
-              <div className="flex-shrink-0 w-9 h-[3.375rem] rounded overflow-hidden bg-base-300">
-                {book.coverUrl
-                  ? <img src={book.coverUrl} alt={book.title}
-                      className="w-full h-full object-cover" loading="lazy" />
-                  : <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-3.5 h-3.5 text-base-content/25" />
-                    </div>
-                }
+              style={{
+                width: '100%', display: 'flex', gap: 'var(--space-3)',
+                padding: '0.75rem var(--space-4)', textAlign: 'left',
+                background: 'none', border: 'none',
+                borderBottom: i < results.length - 1 ? '1px solid var(--color-divider)' : 'none',
+                cursor: 'pointer',
+                transition: 'background var(--transition)',
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--color-surface-accent)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'none'}
+            >
+              <div style={{
+                flexShrink: 0, width: '2.25rem', height: '3.375rem',
+                borderRadius: 'var(--radius-sm)', overflow: 'hidden',
+                background: 'var(--color-surface-2)',
+              }}>
+                {book.coverUrl ? (
+                  <img src={book.coverUrl} alt={book.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    loading="lazy" />
+                ) : (
+                  <div style={{
+                    width: '100%', height: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <BookOpen style={{ width: '0.875rem', height: '0.875rem', color: 'var(--color-text-faint)' }} />
+                  </div>
+                )}
               </div>
-              <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
-                <p className="card-title-serif text-sm leading-snug line-clamp-1
-                              group-hover:text-primary transition-colors">
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.125rem' }}>
+                <p className="card-title-serif" style={{
+                  fontSize: 'var(--text-sm)', lineHeight: 'var(--leading-snug)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  color: 'var(--color-text)',
+                }}>
                   {book.title}
                 </p>
-                <p className="text-xs text-base-content/50 truncate">
+                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {book.authors}
                   {book.publishedDate && (
-                    <span className="text-base-content/35">
+                    <span style={{ color: 'var(--color-text-faint)' }}>
                       {' · '}{book.publishedDate.slice(0, 4)}
                     </span>
                   )}

@@ -18,6 +18,8 @@ const config = {
         'surface-2':      'var(--color-surface-2)',
         'surface-elevated':'var(--color-surface-elevated)',
         'surface-accent': 'var(--color-surface-accent)',
+        'surface-offset': 'var(--color-surface-offset)',
+        'surface-dynamic':'var(--color-surface-dynamic)',
         border:           'var(--color-border)',
         divider:          'var(--color-divider)',
         text:             'var(--color-text)',

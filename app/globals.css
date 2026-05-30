@@ -50,6 +50,8 @@
   --color-surface-2:        #1d1a17;
   --color-surface-elevated: #252118;
   --color-surface-accent:   color-mix(in oklch, #c9956a 8%, #161412);
+  --color-surface-offset:   oklch(from #e8e2d8 l c h / 0.06);
+  --color-surface-dynamic:  oklch(from #e8e2d8 l c h / 0.10);
 
   /* Borders */
   --color-border:   oklch(from #e8e2d8 l c h / 0.10);
@@ -115,6 +117,8 @@
   --color-surface-2:        #ffffff;
   --color-surface-elevated: #ffffff;
   --color-surface-accent:   color-mix(in oklch, #a3704a 8%, #faf8f4);
+  --color-surface-offset:   oklch(from #1c1917 l c h / 0.05);
+  --color-surface-dynamic:  oklch(from #1c1917 l c h / 0.07);
 
   --color-border:  oklch(from #1c1917 l c h / 0.12);
   --color-divider: oklch(from #1c1917 l c h / 0.07);
@@ -158,6 +162,8 @@
     --color-surface-2:        #ffffff;
     --color-surface-elevated: #ffffff;
     --color-surface-accent:   color-mix(in oklch, #a3704a 8%, #faf8f4);
+    --color-surface-offset:   oklch(from #1c1917 l c h / 0.05);
+    --color-surface-dynamic:  oklch(from #1c1917 l c h / 0.07);
     --color-border:  oklch(from #1c1917 l c h / 0.12);
     --color-divider: oklch(from #1c1917 l c h / 0.07);
     --color-text:         #1e1a16;
