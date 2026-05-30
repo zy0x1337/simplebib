@@ -37,13 +37,13 @@ export function SeriesTab({ onAddSeries }: SeriesTabProps) {
     <>
       {sortedSeries.length > 0 ? (
         <div
-          className="anim-fade-in"
+          className="anim-fade-in sm:grid-cols-2 lg:grid-cols-3"
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr',
             gap: 'var(--space-3)',
             paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 8px))',
-          }} className="sm:grid-cols-2 lg:grid-cols-3"
+          }}
         >
           {sortedSeries.map((series, index) => (
             <div key={series.id} className="anim-fade-up" style={{ animationDelay: `${Math.min(index * 0.05, 0.4)}s` }}>
