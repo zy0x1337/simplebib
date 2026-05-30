@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Book, db, sortBooks, searchBooks, type SortKey, type SortDir } from '@/lib/db'
 import { BookCard } from '@/components/BookCard'
+import { BentoBooksGrid } from '@/components/BentoBooksGrid'
 import { Search, X, Library, Grid3X3, List, ArrowUpDown } from 'lucide-react'
 
 interface BooksTabProps {
@@ -162,17 +163,7 @@ export function BooksTab({ onAddBook }: BooksTabProps) {
             ))}
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: 'var(--space-3)',
-          }} className="sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {standaloneBooks.map((book, i) => (
-              <div key={book.id} className="anim-fade-up" style={{ animationDelay: `${Math.min(i * 0.05, 0.4)}s` }}>
-                <BookCard book={book} viewMode="grid" />
-              </div>
-            ))}
-          </div>
+          <BentoBooksGrid books={standaloneBooks} />
         )
       ) : searchQuery ? (
         <div style={{

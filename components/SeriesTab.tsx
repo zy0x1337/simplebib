@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/db'
-import { SeriesCard } from '@/components/SeriesCard'
+import { BentoSeriesGrid } from '@/components/BentoSeriesGrid'
 import { Search, X, Library } from 'lucide-react'
 
 interface SeriesTabProps {
@@ -108,30 +108,8 @@ export function SeriesTab({ onAddSeries }: SeriesTabProps) {
         </p>
       )}
 
-      {/* Series grid */}
-      {filteredSeries.length > 0 ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr',
-          gap: 'var(--space-3)',
-        }} className="sm:grid-cols-2 lg:grid-cols-3">
-          {filteredSeries.map((series, index) => (
-            <div key={series.id} className="anim-fade-up" style={{ animationDelay: `${Math.min(index * 0.05, 0.4)}s` }}>
-              <SeriesCard series={series} />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 'var(--space-3)', padding: 'var(--space-8) 0', textAlign: 'center',
-        }}>
-          <Search style={{ width: '2rem', height: '2rem', color: 'var(--color-text-faint)' }} />
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-            Keine Reihen gefunden für »{searchQuery}«
-          </p>
-        </div>
-      )}
+      {/* Series grid — Bento */}
+      <BentoSeriesGrid series={filteredSeries} />
     </div>
   )
 }
